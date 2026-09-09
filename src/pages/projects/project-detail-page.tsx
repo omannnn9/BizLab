@@ -1,0 +1,151 @@
+import { useState } from "react";
+import { useParams } from "react-router-dom";
+import { Plus } from "lucide-react";
+import { PageHeader } from "@/components/shared/page-header";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Progress } from "@/components/ui/progress";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Input } from "@/components/ui/input";
+import { Checkbox } from "@/components/ui/checkbox";
+import { KanbanBoard } from "@/components/tasks/kanban-board";
+import { TaskListView } from "@/components/tasks/task-list-view";
+import { TaskDialog } from "@/components/tasks/task-dialog";
+import { useProject } from "@/hooks/use-projects";
+import { useTasks } from "@/hooks/use-tasks";
+import { useCreateMilestone, useMilestones, useUpdateMilestone } from "@/hooks/use-milestones";
+import type { Task } from "@/types/database";
+
+export function ProjectDetailPage() {
+  const { projectId } = useParams<{ projectId: string }>();
+  const { data: project } = useProject(projectId);
+  const { data: tasks, isLoading } = useTasks({ projectId });
+  const { data: milestones } = useMilestones(projectId);
+  const createMilestone = useCreateMilestone(projectId!);
+  const updateMilestone = useUpdateMilestone(projectId!);
+
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [editingTask, setEditingTask] = useState<Task | undefined>();
+  const [milestoneName, setMilestoneName] = useState("");
+  const [view, setView] = useState<"kanban" | "list">("kanban");
+
+  const done = tasks?.filter((t) => t.status === "done").length ?? 0;
+  const total = tasks?.length ?? 0;
+  const progress = total > 0 ? Math.round((done / total) * 100) : 0;
+
+  if (!project) return null;
+
+  return (
+    <div className="flex h-full flex-col">
+      <PageHeader
+        title={project.name}
+        description={project.description ?? undefined}
+        actions={<Badge variant="outline">{project.status.replace("_", " ")}</Badge>}
+      />
+
+      <div className="border-b px-6 py-3">
+        <div className="flex items-center justify-between text-xs text-muted-foreground">
+          <span>Progress</span>
+          <span>{done} / {total} tasks complete</span>
+        </div>
+        <Progress value={progress} className="mt-1.5" />
+      </div>
+
+      <Tabs defaultValue="tasks" className="flex flex-1 flex-col overflow-hidden">
+        <div className="flex items-center justify-between px-6 pt-3">
+          <TabsList>
+            <TabsTrigger value="tasks">Tasks</TabsTrigger>
+            <TabsTrigger value="milestones">Milestones</TabsTrigger>
+          </TabsList>
+          <div className="flex items-center gap-2">
+            <Tabs value={view} onValueChange={(v) => setView(v as "kanban" | "list")}>
+              <TabsList>
+                <TabsTrigger value="kanban">Kanban</TabsTrigger>
+                <TabsTrigger value="list">List</TabsTrigger>
+              </TabsList>
+            </Tabs>
+            <Button
+              size="sm"
+              onClick={() => {
+                setEditingTask(undefined);
+                setDialogOpen(true);
+              }}
+            >
+              <Plus /> Task
+            </Button>
+          </div>
+        </div>
+
+        <TabsContent value="tasks" className="flex-1 overflow-hidden">
+          {!isLoading &&
+            (view === "kanban" ? (
+              <KanbanBoard
+                tasks={tasks ?? []}
+                onTaskClick={(t) => {
+                  setEditingTask(t);
+                  setDialogOpen(true);
+                }}
+              />
+            ) : (
+              <div className="h-full overflow-y-auto">
+                <TaskListView
+                  tasks={tasks ?? []}
+                  onTaskClick={(t) => {
+                    setEditingTask(t);
+                    setDialogOpen(true);
+                  }}
+                />
+              </div>
+            ))}
+        </TabsContent>
+
+        <TabsContent value="milestones" className="flex-1 overflow-y-auto px-6 py-4">
+          <form
+            className="mb-4 flex gap-2"
+            onSubmit={async (e) => {
+              e.preventDefault();
+              if (!milestoneName.trim()) return;
+              await createMilestone.mutateAsync({ name: milestoneName });
+              setMilestoneName("");
+            }}
+          >
+            <Input
+              value={milestoneName}
+              onChange={(e) => setMilestoneName(e.target.value)}
+              placeholder="Add a milestone…"
+            />
+            <Button type="submit">Add</Button>
+          </form>
+          <div className="flex flex-col gap-2">
+            {milestones?.map((m) => (
+              <label
+                key={m.id}
+                className="flex items-center gap-3 rounded-lg border px-3 py-2.5 text-sm"
+              >
+                <Checkbox
+                  checked={m.status === "completed"}
+                  onCheckedChange={(checked) =>
+                    updateMilestone.mutate({ id: m.id, status: checked ? "completed" : "upcoming" })
+                  }
+                />
+                <span className={m.status === "completed" ? "text-muted-foreground line-through" : ""}>
+                  {m.name}
+                </span>
+              </label>
+            ))}
+            {(!milestones || milestones.length === 0) && (
+              <p className="text-sm text-muted-foreground">No milestones yet.</p>
+            )}
+          </div>
+        </TabsContent>
+      </Tabs>
+
+      <TaskDialog
+        open={dialogOpen}
+        onOpenChange={setDialogOpen}
+        task={editingTask}
+        defaultProjectId={projectId}
+      />
+    </div>
+  );
+}
