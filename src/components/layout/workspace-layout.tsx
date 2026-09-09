@@ -3,9 +3,11 @@ import { Loader2 } from "lucide-react";
 import { Sidebar } from "@/components/layout/sidebar";
 import { Topbar } from "@/components/layout/topbar";
 import { useWorkspace } from "@/hooks/use-workspace";
+import { useIdleTimeout } from "@/hooks/use-idle-timeout";
 
 export function WorkspaceLayout() {
   const { loading, notFound } = useWorkspace();
+  useIdleTimeout();
 
   if (loading) {
     return (

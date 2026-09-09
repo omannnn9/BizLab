@@ -1,0 +1,136 @@
+import { useState } from "react";
+import { formatDistanceToNow } from "date-fns";
+import { Pencil, SmilePlus, Trash2 } from "lucide-react";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Button } from "@/components/ui/button";
+import { Textarea } from "@/components/ui/textarea";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { cn } from "@/lib/utils";
+import { useAuth } from "@/hooks/use-auth";
+import { useWorkspace } from "@/hooks/use-workspace";
+import {
+  QUICK_REACTIONS,
+  useDeleteMessage,
+  useEditMessage,
+  useToggleReaction,
+  type ChatMessageWithReactions,
+} from "@/hooks/use-messages";
+
+export function MessageItem({ message, channelId }: { message: ChatMessageWithReactions; channelId: string }) {
+  const { user } = useAuth();
+  const { membership } = useWorkspace();
+  const editMessage = useEditMessage(channelId);
+  const deleteMessage = useDeleteMessage(channelId);
+  const toggleReaction = useToggleReaction(channelId);
+
+  const [editing, setEditing] = useState(false);
+  const [draft, setDraft] = useState(message.body ?? "");
+
+  const isOwn = message.author_id === user?.id;
+  const isDeleted = !!message.deleted_at;
+
+  const reactionGroups = (message.chat_reactions ?? []).reduce<Record<string, string[]>>((acc, r) => {
+    (acc[r.emoji] ??= []).push(r.member_id);
+    return acc;
+  }, {});
+
+  async function handleSaveEdit() {
+    if (!draft.trim()) return;
+    await editMessage.mutateAsync({ id: message.id, body: draft });
+    setEditing(false);
+  }
+
+  return (
+    <div className="group flex gap-2.5">
+      <Avatar className="size-8 shrink-0">
+        <AvatarFallback className="text-xs">
+          {(message.author?.full_name ?? message.author?.email ?? "?")[0]}
+        </AvatarFallback>
+      </Avatar>
+      <div className="min-w-0 flex-1">
+        <div className="flex items-baseline gap-2">
+          <span className="text-sm font-medium">{message.author?.full_name ?? message.author?.email}</span>
+          <span className="text-xs text-muted-foreground">
+            {formatDistanceToNow(new Date(message.created_at), { addSuffix: true })}
+          </span>
+          {message.edited_at && !isDeleted && <span className="text-xs text-muted-foreground">(edited)</span>}
+        </div>
+
+        {isDeleted ? (
+          <p className="text-sm italic text-muted-foreground">This message was deleted</p>
+        ) : editing ? (
+          <div className="mt-1 flex flex-col gap-1.5">
+            <Textarea value={draft} onChange={(e) => setDraft(e.target.value)} className="min-h-16" autoFocus />
+            <div className="flex gap-2">
+              <Button size="sm" onClick={handleSaveEdit} disabled={editMessage.isPending}>
+                Save
+              </Button>
+              <Button size="sm" variant="ghost" onClick={() => setEditing(false)}>
+                Cancel
+              </Button>
+            </div>
+          </div>
+        ) : (
+          <p className="whitespace-pre-wrap text-sm">{message.body}</p>
+        )}
+
+        {!isDeleted && Object.keys(reactionGroups).length > 0 && (
+          <div className="mt-1 flex flex-wrap gap-1">
+            {Object.entries(reactionGroups).map(([emoji, memberIds]) => (
+              <button
+                key={emoji}
+                onClick={() => toggleReaction.mutate({ messageId: message.id, emoji })}
+                className={cn(
+                  "flex items-center gap-1 rounded-full border px-1.5 py-0.5 text-xs",
+                  membership && memberIds.includes(membership.id) ? "border-primary bg-primary/10" : "hover:bg-accent"
+                )}
+              >
+                {emoji} {memberIds.length}
+              </button>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {!isDeleted && (
+        <div className="flex h-fit items-center gap-0.5 opacity-0 transition-opacity group-hover:opacity-100">
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button variant="ghost" size="icon" className="size-7">
+                <SmilePlus className="size-3.5" />
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-auto p-1.5">
+              <div className="flex gap-1">
+                {QUICK_REACTIONS.map((emoji) => (
+                  <button
+                    key={emoji}
+                    onClick={() => toggleReaction.mutate({ messageId: message.id, emoji })}
+                    className="rounded p-1 text-base hover:bg-accent"
+                  >
+                    {emoji}
+                  </button>
+                ))}
+              </div>
+            </PopoverContent>
+          </Popover>
+          {isOwn && (
+            <>
+              <Button variant="ghost" size="icon" className="size-7" onClick={() => setEditing(true)}>
+                <Pencil className="size-3.5" />
+              </Button>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="size-7"
+                onClick={() => deleteMessage.mutate(message.id)}
+              >
+                <Trash2 className="size-3.5" />
+              </Button>
+            </>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}

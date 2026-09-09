@@ -2,6 +2,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/hooks/use-auth";
 import { useWorkspace } from "@/hooks/use-workspace";
+import { sanitizeFileName, validateFile } from "@/lib/file-policy";
 import type { FileObject } from "@/types/database";
 
 const BUCKET = "company-files";
@@ -33,21 +34,31 @@ export function useUploadFile(folderId: string | null) {
 
   return useMutation({
     mutationFn: async (file: File) => {
-      const storagePath = `${company!.id}/${crypto.randomUUID()}-${file.name}`;
+      const validationError = validateFile(file);
+      if (validationError) throw new Error(validationError);
+
+      const safeName = sanitizeFileName(file.name);
+      const storagePath = `${company!.id}/${crypto.randomUUID()}-${safeName}`;
       const { error: uploadError } = await supabase.storage.from(BUCKET).upload(storagePath, file);
       if (uploadError) throw uploadError;
 
       const { error } = await supabase.from("files").insert({
         company_id: company!.id,
         folder_id: folderId,
-        name: file.name,
+        name: safeName,
         storage_path: storagePath,
         file_size: file.size,
         mime_type: file.type || null,
-        extension: file.name.split(".").pop() ?? null,
+        extension: safeName.split(".").pop() ?? null,
         uploaded_by: user!.id,
       });
-      if (error) throw error;
+      if (error) {
+        // The upload already landed in Storage; don't leave an orphaned
+        // object behind if the `files` row insert is rejected (e.g. the
+        // storage-quota trigger, SEC-23/FUNC-03).
+        await supabase.storage.from(BUCKET).remove([storagePath]);
+        throw error;
+      }
     },
     onSuccess: () => void queryClient.invalidateQueries({ queryKey: ["files", company?.id] }),
   });

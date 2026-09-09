@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { toast } from "sonner";
-import { Mail, Trash2, UserPlus } from "lucide-react";
+import { Link2, Mail, Trash2, UserPlus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
@@ -106,12 +106,27 @@ export function MembersSettingsPage() {
       {invitations && invitations.length > 0 && (
         <div>
           <h3 className="mb-2 text-sm font-semibold">Pending invitations</h3>
+          <p className="mb-2 text-xs text-muted-foreground">
+            Email delivery isn't connected yet (see docs/ROADMAP.md) — copy the link and send it
+            directly for now.
+          </p>
           <div className="overflow-hidden rounded-lg border">
             {invitations.map((inv) => (
               <div key={inv.id} className="flex items-center gap-3 border-b px-4 py-3 last:border-b-0">
                 <Mail className="size-4 text-muted-foreground" />
                 <span className="flex-1 text-sm">{inv.email}</span>
                 <Badge variant="outline">{ROLE_LABELS[inv.role]}</Badge>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => {
+                    const link = `${window.location.origin}/accept-invite?token=${inv.token}`;
+                    void navigator.clipboard.writeText(link);
+                    toast.success("Invite link copied");
+                  }}
+                >
+                  <Link2 className="size-3.5" /> Copy link
+                </Button>
               </div>
             ))}
           </div>

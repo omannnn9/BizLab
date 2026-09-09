@@ -2,7 +2,8 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/hooks/use-auth";
 import { useWorkspace } from "@/hooks/use-workspace";
-import type { Document } from "@/types/database";
+import { emptyContent } from "@/lib/document-blocks";
+import type { Document, DocAccessLevel, Profile } from "@/types/database";
 
 export function useDocuments(folderId: string | null) {
   const { company } = useWorkspace();
@@ -15,9 +16,45 @@ export function useDocuments(folderId: string | null) {
         .select("*")
         .eq("company_id", company!.id)
         .eq("is_archived", false)
+        .is("parent_document_id", null)
         .order("updated_at", { ascending: false });
       query = folderId ? query.eq("folder_id", folderId) : query.is("folder_id", null);
       const { data, error } = await query;
+      if (error) throw error;
+      return (data ?? []) as Document[];
+    },
+  });
+}
+
+export function useTemplates() {
+  const { company } = useWorkspace();
+  return useQuery({
+    queryKey: ["document-templates", company?.id],
+    enabled: !!company,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("documents")
+        .select("*")
+        .eq("company_id", company!.id)
+        .eq("is_template", true)
+        .order("title", { ascending: true });
+      if (error) throw error;
+      return (data ?? []) as Document[];
+    },
+  });
+}
+
+export function useChildDocuments(parentDocumentId: string | undefined) {
+  return useQuery({
+    queryKey: ["child-documents", parentDocumentId],
+    enabled: !!parentDocumentId,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("documents")
+        .select("*")
+        .eq("parent_document_id", parentDocumentId!)
+        .eq("is_archived", false)
+        .order("title", { ascending: true });
       if (error) throw error;
       return (data ?? []) as Document[];
     },
@@ -42,13 +79,20 @@ export function useCreateDocument() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async ({ folderId, title }: { folderId?: string | null; title?: string }) => {
+    mutationFn: async (input: {
+      folderId?: string | null;
+      title?: string;
+      parentDocumentId?: string | null;
+      fromTemplate?: Document;
+    }) => {
       const { data, error } = await supabase
         .from("documents")
         .insert({
           company_id: company!.id,
-          folder_id: folderId ?? null,
-          title: title ?? "Untitled",
+          folder_id: input.folderId ?? null,
+          parent_document_id: input.parentDocumentId ?? null,
+          title: input.fromTemplate?.title ?? input.title ?? "Untitled",
+          content: input.fromTemplate?.content ?? emptyContent(),
           created_by: user!.id,
         })
         .select()
@@ -56,10 +100,19 @@ export function useCreateDocument() {
       if (error) throw error;
       return data as Document;
     },
-    onSuccess: () => void queryClient.invalidateQueries({ queryKey: ["documents", company?.id] }),
+    onSuccess: (_d, variables) => {
+      void queryClient.invalidateQueries({ queryKey: ["documents", company?.id] });
+      if (variables.parentDocumentId) {
+        void queryClient.invalidateQueries({ queryKey: ["child-documents", variables.parentDocumentId] });
+      }
+    },
   });
 }
 
+/** Lightweight metadata patch (folder, visibility, defaults, archive,
+ * template flag). Content changes always go through save_document_version
+ * so the version trail and current_version stay consistent — see
+ * useSaveDocumentVersion. */
 export function useUpdateDocument() {
   const { user } = useAuth();
   const queryClient = useQueryClient();
@@ -76,5 +129,109 @@ export function useUpdateDocument() {
       void queryClient.invalidateQueries({ queryKey: ["document", variables.id] });
       void queryClient.invalidateQueries({ queryKey: ["documents"] });
     },
+  });
+}
+
+export function useSaveDocumentVersion(documentId: string | undefined) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ title, content }: { title: string; content: unknown }) => {
+      const { data, error } = await supabase.rpc("save_document_version", {
+        p_document_id: documentId!,
+        p_title: title,
+        p_content: content,
+      });
+      if (error) throw error;
+      return data as number;
+    },
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: ["document", documentId] });
+      void queryClient.invalidateQueries({ queryKey: ["document-versions", documentId] });
+    },
+  });
+}
+
+export interface DocumentVersionSummary {
+  id: string;
+  version_number: number;
+  title: string;
+  created_at: string;
+  created_by: string;
+  author: Profile | null;
+}
+
+export function useDocumentVersions(documentId: string | undefined) {
+  return useQuery({
+    queryKey: ["document-versions", documentId],
+    enabled: !!documentId,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("document_versions")
+        .select("id, version_number, title, created_at, created_by, author:profiles(*)")
+        .eq("document_id", documentId!)
+        .order("version_number", { ascending: false });
+      if (error) throw error;
+      return (data ?? []) as unknown as DocumentVersionSummary[];
+    },
+  });
+}
+
+export function useRestoreDocumentVersion(documentId: string | undefined) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (versionNumber: number) => {
+      const { error } = await supabase.rpc("restore_document_version", {
+        p_document_id: documentId!,
+        p_version_number: versionNumber,
+      });
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: ["document", documentId] });
+      void queryClient.invalidateQueries({ queryKey: ["document-versions", documentId] });
+    },
+  });
+}
+
+export function useDocumentPermissions(documentId: string | undefined) {
+  return useQuery({
+    queryKey: ["document-permissions", documentId],
+    enabled: !!documentId,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("document_permissions")
+        .select("*, member:company_members(*, profile:profiles(*))")
+        .eq("document_id", documentId!);
+      if (error) throw error;
+      return data ?? [];
+    },
+  });
+}
+
+export function useShareDocument(documentId: string | undefined) {
+  const { user } = useAuth();
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ memberId, accessLevel }: { memberId: string; accessLevel: DocAccessLevel }) => {
+      const { error } = await supabase
+        .from("document_permissions")
+        .upsert(
+          { document_id: documentId!, member_id: memberId, access_level: accessLevel, granted_by: user!.id },
+          { onConflict: "document_id,member_id" }
+        );
+      if (error) throw error;
+    },
+    onSuccess: () => void queryClient.invalidateQueries({ queryKey: ["document-permissions", documentId] }),
+  });
+}
+
+export function useRevokeDocumentShare(documentId: string | undefined) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (permissionId: string) => {
+      const { error } = await supabase.from("document_permissions").delete().eq("id", permissionId);
+      if (error) throw error;
+    },
+    onSuccess: () => void queryClient.invalidateQueries({ queryKey: ["document-permissions", documentId] }),
   });
 }

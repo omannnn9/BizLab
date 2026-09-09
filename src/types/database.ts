@@ -31,7 +31,8 @@ export type WidgetType =
   | "recent_activity"
   | "projects_overview"
   | "my_tasks"
-  | "channel_activity";
+  | "channel_activity"
+  | "revenue_metrics";
 
 export type KnowledgeCategory =
   | "sop"
@@ -194,6 +195,8 @@ export interface Document {
   id: string;
   company_id: string;
   folder_id: string | null;
+  parent_document_id: string | null;
+  is_template: boolean;
   title: string;
   icon: string | null;
   cover_image_url: string | null;

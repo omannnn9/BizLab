@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Link, Navigate } from "react-router-dom";
+import { Link, Navigate, useSearchParams } from "react-router-dom";
 import { toast } from "sonner";
 import { Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -12,13 +12,14 @@ import { useAuth } from "@/hooks/use-auth";
 
 export function SignupPage() {
   const { user, loading: authLoading } = useAuth();
+  const [searchParams] = useSearchParams();
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [checkEmail, setCheckEmail] = useState(false);
 
-  if (!authLoading && user) return <Navigate to="/workspaces" replace />;
+  if (!authLoading && user) return <Navigate to={searchParams.get("redirect") ?? "/workspaces"} replace />;
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();

@@ -26,7 +26,7 @@ as $$
   select 'task'::public.search_result_type, t.id, t.title,
          left(coalesce(t.description, ''), 140),
          '/tasks/' || t.id,
-         similarity(t.title, (select raw from q))
+         similarity(t.title, (select raw from q)) as rank
   from public.tasks t, q
   where t.company_id = p_company_id and t.title % (select raw from q)
 

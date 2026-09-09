@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Link, Navigate, useLocation } from "react-router-dom";
+import { Link, Navigate, useLocation, useSearchParams } from "react-router-dom";
 import { toast } from "sonner";
 import { Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -13,12 +13,14 @@ import { useAuth } from "@/hooks/use-auth";
 export function LoginPage() {
   const { user, loading: authLoading } = useAuth();
   const location = useLocation();
+  const [searchParams] = useSearchParams();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [submitting, setSubmitting] = useState(false);
 
   if (!authLoading && user) {
-    const from = (location.state as { from?: Location })?.from?.pathname ?? "/workspaces";
+    const from =
+      searchParams.get("redirect") ?? (location.state as { from?: Location })?.from?.pathname ?? "/workspaces";
     return <Navigate to={from} replace />;
   }
 
@@ -53,7 +55,12 @@ export function LoginPage() {
               />
             </div>
             <div className="flex flex-col gap-1.5">
-              <Label htmlFor="password">Password</Label>
+              <div className="flex items-center justify-between">
+                <Label htmlFor="password">Password</Label>
+                <Link to="/forgot-password" className="text-xs font-medium text-primary hover:underline">
+                  Forgot password?
+                </Link>
+              </div>
               <Input
                 id="password"
                 type="password"

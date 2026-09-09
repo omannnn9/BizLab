@@ -20,6 +20,20 @@ export function useSubscription() {
   });
 }
 
+/**
+ * Client-side plan-feature gate — same caveat as lib/permissions.ts:
+ * this hides/disables UI for features the workspace's plan doesn't
+ * include, but nothing in RLS currently enforces it server-side, so a
+ * direct API call can still reach a gated table. Treat this as an
+ * upsell/UX mechanism today, not a real entitlement boundary — see
+ * docs/SUBSCRIPTION_MODEL.md for the plan to close that gap.
+ */
+export function useFeatureEnabled(feature: string): boolean {
+  const { data: subscription } = useSubscription();
+  const features = subscription?.plan?.features as Record<string, unknown> | undefined;
+  return features?.[feature] === true;
+}
+
 export function usePlans() {
   return useQuery({
     queryKey: ["plans"],

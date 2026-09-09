@@ -16,6 +16,7 @@ const WIDGET_TITLES: Record<DashboardWidget["widget_type"], string> = {
   projects_overview: "Projects overview",
   my_tasks: "My tasks",
   channel_activity: "Channel activity",
+  revenue_metrics: "Revenue metrics",
 };
 
 export function WidgetRenderer({ widget, onRemove }: { widget: DashboardWidget; onRemove?: () => void }) {
@@ -140,6 +141,30 @@ export function WidgetRenderer({ widget, onRemove }: { widget: DashboardWidget; 
         <WidgetCard title={title} onRemove={onRemove}>
           <div className="text-2xl font-semibold">{stats.memberCount}</div>
           <p className="mt-1 text-xs text-muted-foreground">active team members</p>
+        </WidgetCard>
+      );
+    }
+
+    case "revenue_metrics": {
+      const total = stats.revenue.reduce((sum, r) => sum + r.amount_cents, 0);
+      const thisMonth = stats.revenue
+        .filter((r) => new Date(r.recognized_date).getMonth() === new Date().getMonth())
+        .reduce((sum, r) => sum + r.amount_cents, 0);
+      if (stats.revenue.length === 0) {
+        return (
+          <WidgetCard title={title} onRemove={onRemove}>
+            <p className="text-sm text-muted-foreground">
+              No revenue logged yet, or you don't have access to Finance.
+            </p>
+          </WidgetCard>
+        );
+      }
+      return (
+        <WidgetCard title={title} onRemove={onRemove}>
+          <div className="text-2xl font-semibold">${(total / 100).toLocaleString()}</div>
+          <p className="mt-1 text-xs text-muted-foreground">
+            ${(thisMonth / 100).toLocaleString()} recognized this month
+          </p>
         </WidgetCard>
       );
     }

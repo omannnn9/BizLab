@@ -98,7 +98,7 @@ begin
   foreach v_channel_name in array array['General', 'Announcements', 'Product', 'Sales', 'Marketing', 'Support']
   loop
     insert into public.chat_channels (company_id, name, type, created_by)
-    values (new.id, v_channel_name, case when v_channel_name = 'Announcements' then 'private' else 'public' end, new.created_by)
+    values (new.id, v_channel_name, (case when v_channel_name = 'Announcements' then 'private' else 'public' end)::public.channel_type, new.created_by)
     returning id into v_channel_id;
 
     insert into public.chat_channel_members (channel_id, member_id, channel_role)

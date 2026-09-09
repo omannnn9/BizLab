@@ -1,9 +1,11 @@
+import { useState } from "react";
 import { Check } from "lucide-react";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { formatBytes } from "@/lib/utils";
 import { usePlans, useSubscription } from "@/hooks/use-billing";
 import { useCompanyMembers } from "@/hooks/use-members";
@@ -17,6 +19,7 @@ export function BillingSettingsPage() {
   const { company } = useWorkspace();
   const { hasMinRole } = usePermissions();
   const canManage = hasMinRole("owner");
+  const [interval, setInterval] = useState<"monthly" | "annual">("monthly");
 
   const memberCount = members?.length ?? 0;
   const plan = subscription?.plan;
@@ -61,7 +64,15 @@ export function BillingSettingsPage() {
       </Card>
 
       <div>
-        <h3 className="mb-3 text-sm font-semibold">Available plans</h3>
+        <div className="mb-3 flex items-center justify-between">
+          <h3 className="text-sm font-semibold">Available plans</h3>
+          <Tabs value={interval} onValueChange={(v) => setInterval(v as "monthly" | "annual")}>
+            <TabsList>
+              <TabsTrigger value="monthly">Monthly</TabsTrigger>
+              <TabsTrigger value="annual">Annual (save ~20%)</TabsTrigger>
+            </TabsList>
+          </Tabs>
+        </div>
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
           {plans?.map((p) => (
             <Card key={p.id} className={p.id === plan?.id ? "border-primary" : undefined}>
@@ -71,9 +82,12 @@ export function BillingSettingsPage() {
               </CardHeader>
               <CardContent>
                 <p className="text-2xl font-bold">
-                  ${(p.price_monthly_cents / 100).toFixed(0)}
+                  ${interval === "monthly" ? (p.price_monthly_cents / 100).toFixed(0) : (p.price_annual_cents / 100 / 12).toFixed(0)}
                   <span className="text-sm font-normal text-muted-foreground">/mo</span>
                 </p>
+                {interval === "annual" && (
+                  <p className="text-xs text-muted-foreground">billed ${(p.price_annual_cents / 100).toFixed(0)}/year</p>
+                )}
                 <ul className="mt-3 flex flex-col gap-1.5 text-sm">
                   <li className="flex items-center gap-1.5">
                     <Check className="size-3.5 text-success" />

@@ -1,4 +1,6 @@
+import { lazy, Suspense } from "react";
 import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
+import { Loader2 } from "lucide-react";
 import { Toaster } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { AuthProvider } from "@/providers/auth-provider";
@@ -9,27 +11,67 @@ import { WorkspaceLayout } from "@/components/layout/workspace-layout";
 import { LandingPage } from "@/pages/landing";
 import { LoginPage } from "@/pages/auth/login";
 import { SignupPage } from "@/pages/auth/signup";
+import { ForgotPasswordPage } from "@/pages/auth/forgot-password";
+import { ResetPasswordPage } from "@/pages/auth/reset-password";
+import { AcceptInvitePage } from "@/pages/auth/accept-invite";
 import { WorkspacePicker } from "@/pages/onboarding/workspace-picker";
 import { CreateWorkspacePage } from "@/pages/onboarding/create-workspace";
-import { DashboardPage } from "@/pages/dashboard/dashboard-page";
-import { TasksPage } from "@/pages/tasks/tasks-page";
-import { ProjectsPage } from "@/pages/projects/projects-page";
-import { ProjectDetailPage } from "@/pages/projects/project-detail-page";
-import { DocumentsPage } from "@/pages/documents/documents-page";
-import { DocumentEditorPage } from "@/pages/documents/document-editor-page";
-import { FilesPage } from "@/pages/files/files-page";
-import { ChatPage } from "@/pages/chat/chat-page";
-import { WhiteboardsPage } from "@/pages/whiteboards/whiteboards-page";
-import { WhiteboardEditorPage } from "@/pages/whiteboards/whiteboard-editor-page";
-import { KnowledgePage } from "@/pages/knowledge/knowledge-page";
-import { KnowledgeArticlePage } from "@/pages/knowledge/knowledge-article-page";
-import { NotificationsPage } from "@/pages/notifications/notifications-page";
-import { SearchPage } from "@/pages/search/search-page";
-import { SettingsLayout } from "@/pages/settings/settings-layout";
-import { GeneralSettingsPage } from "@/pages/settings/general-settings-page";
-import { MembersSettingsPage } from "@/pages/settings/members-settings-page";
-import { BillingSettingsPage } from "@/pages/settings/billing-settings-page";
-import { SecuritySettingsPage } from "@/pages/settings/security-settings-page";
+
+// Route-level code splitting: everything behind the workspace shell is
+// lazy-loaded. These pages (rich editors, the kanban board, the
+// whiteboard canvas) accounted for most of the original 811 KB single
+// bundle; landing/auth/onboarding stay eager since they're the actual
+// first paint for a signed-out visitor and are small on their own.
+const DashboardPage = lazy(() => import("@/pages/dashboard/dashboard-page").then((m) => ({ default: m.DashboardPage })));
+const TasksPage = lazy(() => import("@/pages/tasks/tasks-page").then((m) => ({ default: m.TasksPage })));
+const ProjectsPage = lazy(() => import("@/pages/projects/projects-page").then((m) => ({ default: m.ProjectsPage })));
+const ProjectDetailPage = lazy(() =>
+  import("@/pages/projects/project-detail-page").then((m) => ({ default: m.ProjectDetailPage }))
+);
+const DocumentsPage = lazy(() => import("@/pages/documents/documents-page").then((m) => ({ default: m.DocumentsPage })));
+const DocumentEditorPage = lazy(() =>
+  import("@/pages/documents/document-editor-page").then((m) => ({ default: m.DocumentEditorPage }))
+);
+const FilesPage = lazy(() => import("@/pages/files/files-page").then((m) => ({ default: m.FilesPage })));
+const ChatPage = lazy(() => import("@/pages/chat/chat-page").then((m) => ({ default: m.ChatPage })));
+const WhiteboardsPage = lazy(() =>
+  import("@/pages/whiteboards/whiteboards-page").then((m) => ({ default: m.WhiteboardsPage }))
+);
+const WhiteboardEditorPage = lazy(() =>
+  import("@/pages/whiteboards/whiteboard-editor-page").then((m) => ({ default: m.WhiteboardEditorPage }))
+);
+const KnowledgePage = lazy(() => import("@/pages/knowledge/knowledge-page").then((m) => ({ default: m.KnowledgePage })));
+const KnowledgeArticlePage = lazy(() =>
+  import("@/pages/knowledge/knowledge-article-page").then((m) => ({ default: m.KnowledgeArticlePage }))
+);
+const NotificationsPage = lazy(() =>
+  import("@/pages/notifications/notifications-page").then((m) => ({ default: m.NotificationsPage }))
+);
+const SearchPage = lazy(() => import("@/pages/search/search-page").then((m) => ({ default: m.SearchPage })));
+const SettingsLayout = lazy(() => import("@/pages/settings/settings-layout").then((m) => ({ default: m.SettingsLayout })));
+const GeneralSettingsPage = lazy(() =>
+  import("@/pages/settings/general-settings-page").then((m) => ({ default: m.GeneralSettingsPage }))
+);
+const MembersSettingsPage = lazy(() =>
+  import("@/pages/settings/members-settings-page").then((m) => ({ default: m.MembersSettingsPage }))
+);
+const BillingSettingsPage = lazy(() =>
+  import("@/pages/settings/billing-settings-page").then((m) => ({ default: m.BillingSettingsPage }))
+);
+const SecuritySettingsPage = lazy(() =>
+  import("@/pages/settings/security-settings-page").then((m) => ({ default: m.SecuritySettingsPage }))
+);
+const CrmPage = lazy(() => import("@/pages/crm/crm-page").then((m) => ({ default: m.CrmPage })));
+const HrPage = lazy(() => import("@/pages/hr/hr-page").then((m) => ({ default: m.HrPage })));
+const FinancePage = lazy(() => import("@/pages/finance/finance-page").then((m) => ({ default: m.FinancePage })));
+
+function RouteFallback() {
+  return (
+    <div className="flex h-full min-h-64 w-full items-center justify-center">
+      <Loader2 className="size-6 animate-spin text-muted-foreground" />
+    </div>
+  );
+}
 
 export default function App() {
   return (
@@ -37,50 +79,58 @@ export default function App() {
       <BrowserRouter>
         <AuthProvider>
           <TooltipProvider delayDuration={200}>
-            <Routes>
-              <Route path="/" element={<LandingPage />} />
-              <Route path="/login" element={<LoginPage />} />
-              <Route path="/signup" element={<SignupPage />} />
+            <Suspense fallback={<RouteFallback />}>
+              <Routes>
+                <Route path="/" element={<LandingPage />} />
+                <Route path="/login" element={<LoginPage />} />
+                <Route path="/signup" element={<SignupPage />} />
+                <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+                <Route path="/reset-password" element={<ResetPasswordPage />} />
+                <Route path="/accept-invite" element={<AcceptInvitePage />} />
 
-              <Route element={<RequireAuth />}>
-                <Route path="/workspaces" element={<WorkspacePicker />} />
-                <Route path="/workspaces/new" element={<CreateWorkspacePage />} />
+                <Route element={<RequireAuth />}>
+                  <Route path="/workspaces" element={<WorkspacePicker />} />
+                  <Route path="/workspaces/new" element={<CreateWorkspacePage />} />
 
-                <Route
-                  path="/w/:slug"
-                  element={
-                    <WorkspaceProvider>
-                      <WorkspaceLayout />
-                    </WorkspaceProvider>
-                  }
-                >
-                  <Route index element={<DashboardPage />} />
-                  <Route path="tasks" element={<TasksPage />} />
-                  <Route path="projects" element={<ProjectsPage />} />
-                  <Route path="projects/:projectId" element={<ProjectDetailPage />} />
-                  <Route path="documents" element={<DocumentsPage />} />
-                  <Route path="documents/:documentId" element={<DocumentEditorPage />} />
-                  <Route path="files" element={<FilesPage />} />
-                  <Route path="chat" element={<ChatPage />} />
-                  <Route path="chat/:channelId" element={<ChatPage />} />
-                  <Route path="whiteboards" element={<WhiteboardsPage />} />
-                  <Route path="whiteboards/:whiteboardId" element={<WhiteboardEditorPage />} />
-                  <Route path="knowledge" element={<KnowledgePage />} />
-                  <Route path="knowledge/:articleId" element={<KnowledgeArticlePage />} />
-                  <Route path="notifications" element={<NotificationsPage />} />
-                  <Route path="search" element={<SearchPage />} />
-                  <Route path="settings" element={<SettingsLayout />}>
-                    <Route index element={<Navigate to="general" replace />} />
-                    <Route path="general" element={<GeneralSettingsPage />} />
-                    <Route path="members" element={<MembersSettingsPage />} />
-                    <Route path="billing" element={<BillingSettingsPage />} />
-                    <Route path="security" element={<SecuritySettingsPage />} />
+                  <Route
+                    path="/w/:slug"
+                    element={
+                      <WorkspaceProvider>
+                        <WorkspaceLayout />
+                      </WorkspaceProvider>
+                    }
+                  >
+                    <Route index element={<DashboardPage />} />
+                    <Route path="tasks" element={<TasksPage />} />
+                    <Route path="projects" element={<ProjectsPage />} />
+                    <Route path="projects/:projectId" element={<ProjectDetailPage />} />
+                    <Route path="documents" element={<DocumentsPage />} />
+                    <Route path="documents/:documentId" element={<DocumentEditorPage />} />
+                    <Route path="files" element={<FilesPage />} />
+                    <Route path="chat" element={<ChatPage />} />
+                    <Route path="chat/:channelId" element={<ChatPage />} />
+                    <Route path="whiteboards" element={<WhiteboardsPage />} />
+                    <Route path="whiteboards/:whiteboardId" element={<WhiteboardEditorPage />} />
+                    <Route path="knowledge" element={<KnowledgePage />} />
+                    <Route path="knowledge/:articleId" element={<KnowledgeArticlePage />} />
+                    <Route path="crm" element={<CrmPage />} />
+                    <Route path="hr" element={<HrPage />} />
+                    <Route path="finance" element={<FinancePage />} />
+                    <Route path="notifications" element={<NotificationsPage />} />
+                    <Route path="search" element={<SearchPage />} />
+                    <Route path="settings" element={<SettingsLayout />}>
+                      <Route index element={<Navigate to="general" replace />} />
+                      <Route path="general" element={<GeneralSettingsPage />} />
+                      <Route path="members" element={<MembersSettingsPage />} />
+                      <Route path="billing" element={<BillingSettingsPage />} />
+                      <Route path="security" element={<SecuritySettingsPage />} />
+                    </Route>
                   </Route>
                 </Route>
-              </Route>
 
-              <Route path="*" element={<Navigate to="/" replace />} />
-            </Routes>
+                <Route path="*" element={<Navigate to="/" replace />} />
+              </Routes>
+            </Suspense>
           </TooltipProvider>
           <Toaster position="top-right" richColors />
         </AuthProvider>

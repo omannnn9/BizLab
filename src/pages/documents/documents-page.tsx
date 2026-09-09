@@ -1,14 +1,23 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { FileText, Folder, FolderPlus, Plus } from "lucide-react";
+import { ChevronDown, FileText, Folder, FolderPlus, Plus } from "lucide-react";
 import { PageHeader } from "@/components/shared/page-header";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { cn } from "@/lib/utils";
 import { useCreateFolder, useFolders } from "@/hooks/use-folders";
-import { useCreateDocument, useDocuments } from "@/hooks/use-documents";
+import { useCreateDocument, useDocuments, useTemplates } from "@/hooks/use-documents";
 import { useWorkspace } from "@/hooks/use-workspace";
 import { formatDistanceToNow } from "date-fns";
+import type { Document } from "@/types/database";
 
 export function DocumentsPage() {
   const { company } = useWorkspace();
@@ -19,11 +28,12 @@ export function DocumentsPage() {
 
   const { data: folders } = useFolders("documents");
   const { data: documents, isLoading } = useDocuments(folderId);
+  const { data: templates } = useTemplates();
   const createFolder = useCreateFolder("documents");
   const createDocument = useCreateDocument();
 
-  async function handleNewDocument() {
-    const doc = await createDocument.mutateAsync({ folderId, title: "Untitled" });
+  async function handleNewDocument(fromTemplate?: Document) {
+    const doc = await createDocument.mutateAsync({ folderId, title: "Untitled", fromTemplate });
     navigate(`/w/${company?.slug}/documents/${doc.id}`);
   }
 
@@ -89,9 +99,31 @@ export function DocumentsPage() {
           title="Documents"
           description="Wikis, SOPs and collaborative notes."
           actions={
-            <Button onClick={handleNewDocument}>
-              <Plus /> New document
-            </Button>
+            <DropdownMenu>
+              <div className="flex">
+                <Button onClick={() => handleNewDocument()} className="rounded-r-none">
+                  <Plus /> New document
+                </Button>
+                <DropdownMenuTrigger asChild>
+                  <Button className="rounded-l-none border-l border-primary-foreground/20 px-2">
+                    <ChevronDown className="size-3.5" />
+                  </Button>
+                </DropdownMenuTrigger>
+              </div>
+              <DropdownMenuContent align="end">
+                <DropdownMenuLabel>New from template</DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                {templates && templates.length > 0 ? (
+                  templates.map((t) => (
+                    <DropdownMenuItem key={t.id} onClick={() => handleNewDocument(t)}>
+                      {t.title}
+                    </DropdownMenuItem>
+                  ))
+                ) : (
+                  <DropdownMenuItem disabled>No templates yet</DropdownMenuItem>
+                )}
+              </DropdownMenuContent>
+            </DropdownMenu>
           }
         />
         <div className="p-6">

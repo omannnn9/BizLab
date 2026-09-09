@@ -1,8 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { formatDistanceToNow } from "date-fns";
 import { Hash, Plus, Send } from "lucide-react";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
@@ -10,6 +8,8 @@ import { useWorkspace } from "@/hooks/use-workspace";
 import { useChannels, useCreateChannel } from "@/hooks/use-channels";
 import { useJoinChannel } from "@/hooks/use-join-channel";
 import { useMessages, useSendMessage } from "@/hooks/use-messages";
+import { usePresence } from "@/hooks/use-presence";
+import { MessageItem } from "@/components/chat/message-item";
 
 export function ChatPage() {
   const { channelId } = useParams<{ channelId: string }>();
@@ -24,7 +24,10 @@ export function ChatPage() {
   const activeChannelId = channelId ?? channels?.[0]?.id;
   const { data: messages } = useMessages(activeChannelId);
   const sendMessage = useSendMessage(activeChannelId);
+  const { onlineUserIds, typingUsers, setTyping } = usePresence(activeChannelId);
   const [body, setBody] = useState("");
+
+  useJoinChannel(activeChannelId);
 
   useEffect(() => {
     if (!channelId && channels?.[0]) {
@@ -32,15 +35,14 @@ export function ChatPage() {
     }
   }, [channelId, channels, company?.slug, navigate]);
 
-  useJoinChannel(activeChannelId);
-
   const activeChannel = channels?.find((c) => c.id === activeChannelId);
 
   async function handleSend(e: React.FormEvent) {
     e.preventDefault();
     if (!body.trim() || !activeChannelId) return;
-    await sendMessage.mutateAsync(body);
+    await sendMessage.mutateAsync({ body });
     setBody("");
+    setTyping(false);
   }
 
   return (
@@ -96,42 +98,42 @@ export function ChatPage() {
         <div className="flex h-14 items-center gap-2 border-b px-4">
           <Hash className="size-4 text-muted-foreground" />
           <span className="font-medium">{activeChannel?.name ?? "Select a channel"}</span>
+          {onlineUserIds.length > 0 && (
+            <span className="ml-auto flex items-center gap-1.5 text-xs text-muted-foreground">
+              <span className="size-1.5 rounded-full bg-success" />
+              {onlineUserIds.length} online
+            </span>
+          )}
         </div>
 
         <div className="flex-1 space-y-4 overflow-y-auto p-4">
           {messages?.map((m) => (
-            <div key={m.id} className="flex gap-2.5">
-              <Avatar className="size-8 shrink-0">
-                <AvatarFallback className="text-xs">
-                  {(m.author?.full_name ?? m.author?.email ?? "?")[0]}
-                </AvatarFallback>
-              </Avatar>
-              <div>
-                <div className="flex items-baseline gap-2">
-                  <span className="text-sm font-medium">{m.author?.full_name ?? m.author?.email}</span>
-                  <span className="text-xs text-muted-foreground">
-                    {formatDistanceToNow(new Date(m.created_at), { addSuffix: true })}
-                  </span>
-                </div>
-                <p className="text-sm">{m.body}</p>
-              </div>
-            </div>
+            <MessageItem key={m.id} message={m} channelId={activeChannelId!} />
           ))}
           {(!messages || messages.length === 0) && (
             <p className="text-sm text-muted-foreground">No messages yet. Say hello 👋</p>
           )}
         </div>
 
-        <form onSubmit={handleSend} className="flex gap-2 border-t p-3">
-          <Input
-            value={body}
-            onChange={(e) => setBody(e.target.value)}
-            placeholder={`Message #${activeChannel?.name ?? ""}`}
-          />
-          <Button type="submit" size="icon">
-            <Send className="size-4" />
-          </Button>
-        </form>
+        <div className="border-t px-4 pt-1.5">
+          <div className="h-4 text-xs text-muted-foreground">
+            {typingUsers.length > 0 &&
+              `${typingUsers.join(", ")} ${typingUsers.length === 1 ? "is" : "are"} typing…`}
+          </div>
+          <form onSubmit={handleSend} className="flex gap-2 pb-3">
+            <Input
+              value={body}
+              onChange={(e) => {
+                setBody(e.target.value);
+                setTyping(e.target.value.length > 0);
+              }}
+              placeholder={`Message #${activeChannel?.name ?? ""}`}
+            />
+            <Button type="submit" size="icon">
+              <Send className="size-4" />
+            </Button>
+          </form>
+        </div>
       </div>
     </div>
   );
