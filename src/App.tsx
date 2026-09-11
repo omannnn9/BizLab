@@ -5,6 +5,7 @@ import { Toaster } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { AuthProvider } from "@/providers/auth-provider";
 import { QueryProvider } from "@/providers/query-provider";
+import { ThemeProvider } from "@/providers/theme-provider";
 import { WorkspaceProvider } from "@/providers/workspace-provider";
 import { RequireAuth } from "@/routes/require-auth";
 import { WorkspaceLayout } from "@/components/layout/workspace-layout";
@@ -75,66 +76,68 @@ function RouteFallback() {
 
 export default function App() {
   return (
-    <QueryProvider>
-      <BrowserRouter>
-        <AuthProvider>
-          <TooltipProvider delayDuration={200}>
-            <Suspense fallback={<RouteFallback />}>
-              <Routes>
-                <Route path="/" element={<LandingPage />} />
-                <Route path="/login" element={<LoginPage />} />
-                <Route path="/signup" element={<SignupPage />} />
-                <Route path="/forgot-password" element={<ForgotPasswordPage />} />
-                <Route path="/reset-password" element={<ResetPasswordPage />} />
-                <Route path="/accept-invite" element={<AcceptInvitePage />} />
+    <ThemeProvider>
+      <QueryProvider>
+        <BrowserRouter>
+          <AuthProvider>
+            <TooltipProvider delayDuration={200}>
+              <Suspense fallback={<RouteFallback />}>
+                <Routes>
+                  <Route path="/" element={<LandingPage />} />
+                  <Route path="/login" element={<LoginPage />} />
+                  <Route path="/signup" element={<SignupPage />} />
+                  <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+                  <Route path="/reset-password" element={<ResetPasswordPage />} />
+                  <Route path="/accept-invite" element={<AcceptInvitePage />} />
 
-                <Route element={<RequireAuth />}>
-                  <Route path="/workspaces" element={<WorkspacePicker />} />
-                  <Route path="/workspaces/new" element={<CreateWorkspacePage />} />
+                  <Route element={<RequireAuth />}>
+                    <Route path="/workspaces" element={<WorkspacePicker />} />
+                    <Route path="/workspaces/new" element={<CreateWorkspacePage />} />
 
-                  <Route
-                    path="/w/:slug"
-                    element={
-                      <WorkspaceProvider>
-                        <WorkspaceLayout />
-                      </WorkspaceProvider>
-                    }
-                  >
-                    <Route index element={<DashboardPage />} />
-                    <Route path="tasks" element={<TasksPage />} />
-                    <Route path="projects" element={<ProjectsPage />} />
-                    <Route path="projects/:projectId" element={<ProjectDetailPage />} />
-                    <Route path="documents" element={<DocumentsPage />} />
-                    <Route path="documents/:documentId" element={<DocumentEditorPage />} />
-                    <Route path="files" element={<FilesPage />} />
-                    <Route path="chat" element={<ChatPage />} />
-                    <Route path="chat/:channelId" element={<ChatPage />} />
-                    <Route path="whiteboards" element={<WhiteboardsPage />} />
-                    <Route path="whiteboards/:whiteboardId" element={<WhiteboardEditorPage />} />
-                    <Route path="knowledge" element={<KnowledgePage />} />
-                    <Route path="knowledge/:articleId" element={<KnowledgeArticlePage />} />
-                    <Route path="crm" element={<CrmPage />} />
-                    <Route path="hr" element={<HrPage />} />
-                    <Route path="finance" element={<FinancePage />} />
-                    <Route path="notifications" element={<NotificationsPage />} />
-                    <Route path="search" element={<SearchPage />} />
-                    <Route path="settings" element={<SettingsLayout />}>
-                      <Route index element={<Navigate to="general" replace />} />
-                      <Route path="general" element={<GeneralSettingsPage />} />
-                      <Route path="members" element={<MembersSettingsPage />} />
-                      <Route path="billing" element={<BillingSettingsPage />} />
-                      <Route path="security" element={<SecuritySettingsPage />} />
+                    <Route
+                      path="/w/:slug"
+                      element={
+                        <WorkspaceProvider>
+                          <WorkspaceLayout />
+                        </WorkspaceProvider>
+                      }
+                    >
+                      <Route index element={<DashboardPage />} />
+                      <Route path="tasks" element={<TasksPage />} />
+                      <Route path="projects" element={<ProjectsPage />} />
+                      <Route path="projects/:projectId" element={<ProjectDetailPage />} />
+                      <Route path="documents" element={<DocumentsPage />} />
+                      <Route path="documents/:documentId" element={<DocumentEditorPage />} />
+                      <Route path="files" element={<FilesPage />} />
+                      <Route path="chat" element={<ChatPage />} />
+                      <Route path="chat/:channelId" element={<ChatPage />} />
+                      <Route path="whiteboards" element={<WhiteboardsPage />} />
+                      <Route path="whiteboards/:whiteboardId" element={<WhiteboardEditorPage />} />
+                      <Route path="knowledge" element={<KnowledgePage />} />
+                      <Route path="knowledge/:articleId" element={<KnowledgeArticlePage />} />
+                      <Route path="crm" element={<CrmPage />} />
+                      <Route path="hr" element={<HrPage />} />
+                      <Route path="finance" element={<FinancePage />} />
+                      <Route path="notifications" element={<NotificationsPage />} />
+                      <Route path="search" element={<SearchPage />} />
+                      <Route path="settings" element={<SettingsLayout />}>
+                        <Route index element={<Navigate to="general" replace />} />
+                        <Route path="general" element={<GeneralSettingsPage />} />
+                        <Route path="members" element={<MembersSettingsPage />} />
+                        <Route path="billing" element={<BillingSettingsPage />} />
+                        <Route path="security" element={<SecuritySettingsPage />} />
+                      </Route>
                     </Route>
                   </Route>
-                </Route>
 
-                <Route path="*" element={<Navigate to="/" replace />} />
-              </Routes>
-            </Suspense>
-          </TooltipProvider>
-          <Toaster position="top-right" richColors />
-        </AuthProvider>
-      </BrowserRouter>
-    </QueryProvider>
+                  <Route path="*" element={<Navigate to="/" replace />} />
+                </Routes>
+              </Suspense>
+            </TooltipProvider>
+            <Toaster position="top-right" richColors />
+          </AuthProvider>
+        </BrowserRouter>
+      </QueryProvider>
+    </ThemeProvider>
   );
 }

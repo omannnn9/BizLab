@@ -2,9 +2,12 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Search } from "lucide-react";
 import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
 import { WorkspaceSwitcher } from "@/components/layout/workspace-switcher";
 import { NotificationsBell } from "@/components/layout/notifications-bell";
+import { ThemeToggle } from "@/components/layout/theme-toggle";
 import { UserMenu } from "@/components/layout/user-menu";
+import { MobileNav } from "@/components/layout/mobile-nav";
 import { useWorkspace } from "@/hooks/use-workspace";
 
 export function Topbar() {
@@ -19,9 +22,10 @@ export function Topbar() {
   }
 
   return (
-    <header className="flex h-14 shrink-0 items-center gap-4 border-b px-4">
+    <header className="flex h-14 shrink-0 items-center gap-2 border-b px-3 sm:gap-4 sm:px-4">
+      <MobileNav />
       <WorkspaceSwitcher />
-      <form onSubmit={handleSearch} className="mx-auto w-full max-w-md">
+      <form onSubmit={handleSearch} className="mx-auto hidden w-full max-w-md sm:block">
         <div className="relative">
           <Search className="absolute left-2.5 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
           <Input
@@ -32,7 +36,17 @@ export function Topbar() {
           />
         </div>
       </form>
-      <div className="flex items-center gap-2">
+      <Button
+        variant="ghost"
+        size="icon"
+        className="ml-auto sm:hidden"
+        onClick={() => navigate(`/w/${company?.slug}/search`)}
+      >
+        <Search className="size-4.5" />
+        <span className="sr-only">Search</span>
+      </Button>
+      <div className="flex items-center gap-1">
+        <ThemeToggle />
         <NotificationsBell />
         <UserMenu />
       </div>

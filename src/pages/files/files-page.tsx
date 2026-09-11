@@ -14,6 +14,8 @@ import { PageHeader } from "@/components/shared/page-header";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { formatBytes, cn } from "@/lib/utils";
+import { Skeleton } from "@/components/ui/skeleton";
+import { EmptyState } from "@/components/shared/empty-state";
 import { useCreateFolder, useFolders } from "@/hooks/use-folders";
 import { useDeleteFile, useFiles, useUploadFile, getFileDownloadUrl } from "@/hooks/use-files";
 
@@ -61,7 +63,7 @@ export function FilesPage() {
 
   return (
     <div className="flex h-full">
-      <div className="w-56 shrink-0 border-r p-3">
+      <div className="hidden w-56 shrink-0 border-r p-3 md:block">
         <button
           onClick={() => setFolderId(null)}
           className={cn(
@@ -156,7 +158,9 @@ export function FilesPage() {
             <p className="text-sm text-muted-foreground">Drag and drop files here, or click Upload</p>
           </div>
 
-          {isLoading ? null : files && files.length > 0 ? (
+          {isLoading ? (
+            <Skeleton className="h-40" />
+          ) : files && files.length > 0 ? (
             <div className="overflow-hidden rounded-lg border">
               <table className="w-full text-sm">
                 <thead className="bg-muted/40 text-left text-xs text-muted-foreground">
@@ -207,7 +211,16 @@ export function FilesPage() {
               </table>
             </div>
           ) : (
-            <p className="text-sm text-muted-foreground">No files in this folder yet.</p>
+            <EmptyState
+              icon={FileIcon}
+              title="No files in this folder"
+              description="Drag files onto this page or use Upload to add your first one."
+              action={
+                <Button size="sm" onClick={() => inputRef.current?.click()}>
+                  <Upload /> Upload
+                </Button>
+              }
+            />
           )}
         </div>
       </div>

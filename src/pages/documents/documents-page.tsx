@@ -13,6 +13,8 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { cn } from "@/lib/utils";
+import { Skeleton } from "@/components/ui/skeleton";
+import { EmptyState } from "@/components/shared/empty-state";
 import { useCreateFolder, useFolders } from "@/hooks/use-folders";
 import { useCreateDocument, useDocuments, useTemplates } from "@/hooks/use-documents";
 import { useWorkspace } from "@/hooks/use-workspace";
@@ -39,7 +41,7 @@ export function DocumentsPage() {
 
   return (
     <div className="flex h-full">
-      <div className="w-56 shrink-0 border-r p-3">
+      <div className="hidden w-56 shrink-0 border-r p-3 md:block">
         <button
           onClick={() => setFolderId(null)}
           className={cn(
@@ -127,7 +129,13 @@ export function DocumentsPage() {
           }
         />
         <div className="p-6">
-          {isLoading ? null : documents && documents.length > 0 ? (
+          {isLoading ? (
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+              {[1, 2, 3].map((i) => (
+                <Skeleton key={i} className="h-24" />
+              ))}
+            </div>
+          ) : documents && documents.length > 0 ? (
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
               {documents.map((doc) => (
                 <button
@@ -144,7 +152,16 @@ export function DocumentsPage() {
               ))}
             </div>
           ) : (
-            <p className="text-sm text-muted-foreground">No documents in this folder yet.</p>
+            <EmptyState
+              icon={FileText}
+              title="No documents in this folder"
+              description="Create a wiki page, SOP, or collaborative note to get started."
+              action={
+                <Button size="sm" onClick={() => handleNewDocument()}>
+                  <Plus /> New document
+                </Button>
+              }
+            />
           )}
         </div>
       </div>

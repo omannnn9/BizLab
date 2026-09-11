@@ -1,13 +1,19 @@
 import { format } from "date-fns";
+import { CheckSquare } from "lucide-react";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { PriorityBadge, StatusBadge } from "@/components/tasks/task-badges";
+import { EmptyState } from "@/components/shared/empty-state";
 import type { Task } from "@/types/database";
 
 export function TaskListView({ tasks, onTaskClick }: { tasks: Task[]; onTaskClick: (task: Task) => void }) {
   if (tasks.length === 0) {
     return (
-      <div className="flex h-64 items-center justify-center text-sm text-muted-foreground">
-        No tasks yet. Create your first one.
+      <div className="p-6">
+        <EmptyState
+          icon={CheckSquare}
+          title="No tasks yet"
+          description="Use the New task button above to add your first one."
+        />
       </div>
     );
   }

@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
+import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Dialog,
@@ -62,7 +63,19 @@ export function CrmPage() {
     .reduce((sum, d) => sum + d.amount_cents, 0);
   const wonValue = (deals ?? []).filter((d) => d.status === "won").reduce((sum, d) => sum + d.amount_cents, 0);
 
-  if (pipelineLoading || !pipelineData) return null;
+  if (pipelineLoading || !pipelineData) {
+    return (
+      <div className="flex h-full flex-col gap-4 p-6">
+        <Skeleton className="h-8 w-48" />
+        <div className="grid grid-cols-3 gap-4">
+          <Skeleton className="h-20" />
+          <Skeleton className="h-20" />
+          <Skeleton className="h-20" />
+        </div>
+        <Skeleton className="h-full" />
+      </div>
+    );
+  }
   const { pipeline, stages } = pipelineData;
 
   return (

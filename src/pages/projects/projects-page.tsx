@@ -1,11 +1,12 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
-import { Plus } from "lucide-react";
+import { FolderKanban, Plus } from "lucide-react";
 import { PageHeader } from "@/components/shared/page-header";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
+import { EmptyState } from "@/components/shared/empty-state";
 import { ProjectDialog } from "@/components/projects/project-dialog";
 import { useProjects } from "@/hooks/use-projects";
 import { useWorkspace } from "@/hooks/use-workspace";
@@ -67,12 +68,16 @@ export function ProjectsPage() {
             ))}
           </div>
         ) : (
-          <div className="flex h-64 flex-col items-center justify-center gap-3 text-center">
-            <p className="text-sm text-muted-foreground">No projects yet.</p>
-            <Button onClick={() => setDialogOpen(true)}>
-              <Plus /> Create your first project
-            </Button>
-          </div>
+          <EmptyState
+            icon={FolderKanban}
+            title="No projects yet"
+            description="Group related tasks into a project to track progress and milestones together."
+            action={
+              <Button size="sm" onClick={() => setDialogOpen(true)}>
+                <Plus /> Create your first project
+              </Button>
+            }
+          />
         )}
       </div>
 

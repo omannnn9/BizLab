@@ -5,6 +5,8 @@ import { PageHeader } from "@/components/shared/page-header";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Skeleton } from "@/components/ui/skeleton";
+import { EmptyState } from "@/components/shared/empty-state";
 import { formatDistanceToNow } from "date-fns";
 import { useCreateKnowledgeArticle, useKnowledgeArticles } from "@/hooks/use-knowledge";
 import { usePermissions } from "@/hooks/use-permissions";
@@ -60,7 +62,13 @@ export function KnowledgePage() {
         </Tabs>
       </div>
       <div className="flex-1 overflow-y-auto p-6">
-        {isLoading ? null : articles && articles.length > 0 ? (
+        {isLoading ? (
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+            {[1, 2, 3].map((i) => (
+              <Skeleton key={i} className="h-24" />
+            ))}
+          </div>
+        ) : articles && articles.length > 0 ? (
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
             {articles.map((a) => (
               <button
@@ -80,7 +88,18 @@ export function KnowledgePage() {
             ))}
           </div>
         ) : (
-          <p className="text-sm text-muted-foreground">No articles yet.</p>
+          <EmptyState
+            icon={BookOpen}
+            title="No articles yet"
+            description="Write your first SOP, policy, or onboarding guide for the team."
+            action={
+              can("knowledge_hub", "create") ? (
+                <Button size="sm" onClick={handleCreate}>
+                  <Plus /> New article
+                </Button>
+              ) : undefined
+            }
+          />
         )}
       </div>
     </div>

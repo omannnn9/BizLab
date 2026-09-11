@@ -81,7 +81,7 @@ function NavItem({
   );
 }
 
-export function Sidebar() {
+export function SidebarNav({ onNavigate }: { onNavigate?: () => void }) {
   const { company } = useWorkspace();
   const { can } = usePermissions();
   const whiteboardsEnabled = useFeatureEnabled("whiteboards");
@@ -100,7 +100,7 @@ export function Sidebar() {
   const visibleBusinessItems = BUSINESS_NAV_ITEMS.filter((item) => can(item.resource, "view"));
 
   return (
-    <aside className="flex h-svh w-60 shrink-0 flex-col border-r border-sidebar-border bg-sidebar text-sidebar-foreground">
+    <div className="flex h-full flex-col" onClick={onNavigate}>
       <nav className="flex-1 space-y-0.5 overflow-y-auto p-3">
         {NAV_ITEMS.map((item) => (
           <NavItem
@@ -145,6 +145,17 @@ export function Sidebar() {
         </NavLink>
         <p className="mt-2 truncate px-2.5 text-xs text-muted-foreground">{company?.name}</p>
       </div>
+    </div>
+  );
+}
+
+/** Persistent sidebar for desktop viewports. On smaller screens it's
+ * replaced by MobileNav's slide-over drawer (same SidebarNav content),
+ * triggered from the Topbar's hamburger button. */
+export function Sidebar() {
+  return (
+    <aside className="hidden h-svh w-60 shrink-0 flex-col border-r border-sidebar-border bg-sidebar text-sidebar-foreground lg:flex">
+      <SidebarNav />
     </aside>
   );
 }

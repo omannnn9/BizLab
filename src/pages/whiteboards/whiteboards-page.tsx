@@ -2,6 +2,8 @@ import { useNavigate } from "react-router-dom";
 import { PenTool, Plus } from "lucide-react";
 import { PageHeader } from "@/components/shared/page-header";
 import { Button } from "@/components/ui/button";
+import { Skeleton } from "@/components/ui/skeleton";
+import { EmptyState } from "@/components/shared/empty-state";
 import { formatDistanceToNow } from "date-fns";
 import { useCreateWhiteboard, useWhiteboards } from "@/hooks/use-whiteboards";
 import { useWorkspace } from "@/hooks/use-workspace";
@@ -29,7 +31,13 @@ export function WhiteboardsPage() {
         }
       />
       <div className="flex-1 overflow-y-auto p-6">
-        {isLoading ? null : whiteboards && whiteboards.length > 0 ? (
+        {isLoading ? (
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            {[1, 2, 3, 4].map((i) => (
+              <Skeleton key={i} className="aspect-video" />
+            ))}
+          </div>
+        ) : whiteboards && whiteboards.length > 0 ? (
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
             {whiteboards.map((b) => (
               <button
@@ -48,7 +56,16 @@ export function WhiteboardsPage() {
             ))}
           </div>
         ) : (
-          <p className="text-sm text-muted-foreground">No whiteboards yet.</p>
+          <EmptyState
+            icon={PenTool}
+            title="No whiteboards yet"
+            description="Spin up an infinite canvas to brainstorm or map out ideas with your team."
+            action={
+              <Button size="sm" onClick={handleCreate}>
+                <Plus /> New board
+              </Button>
+            }
+          />
         )}
       </div>
     </div>
