@@ -30,23 +30,26 @@ cp .env.example .env.local   # fill in your Supabase project URL + anon key
 npm run dev
 ```
 
-### Setting up Supabase
+A live Supabase project (`BizLab`, `eu-west-1`) backs this repo with all
+21 migrations applied and verified — see `docs/AUDIT_REPORT.md` for what
+was found and fixed while doing that (including two real,
+execution-only-discoverable issues: a spoofable notifications/activity-log
+RPC gap, and a storage-usage view that bypassed tenant RLS). `.env.local`
+is git-ignored; ask whoever set up the project for its URL and
+publishable key, or provision your own per below.
+
+### Setting up your own Supabase project
 
 1. Create a Supabase project (via the [dashboard](https://supabase.com/dashboard)
    or the Supabase MCP tools if you're working in an environment that has
    them).
 2. Run the migrations in `supabase/migrations/` **in order** (0001 →
-   0012) — via `supabase db push`, the Supabase SQL editor, or
+   0021) — via `supabase db push`, the Supabase SQL editor, or
    `mcp__Supabase__apply_migration` one file at a time.
 3. Copy your project's URL and anon/publishable key into `.env.local`
    (see `.env.example`).
 4. `npm run dev`, sign up, and you'll land in the onboarding flow that
    creates your first company workspace.
-
-> No live Supabase project or billing account was provisioned as part of
-> building this repository — connecting one is a deliberate step for you
-> to take (see `docs/ROADMAP.md` Phase 1), since it has real-world cost
-> and account implications.
 
 ## Scripts
 
@@ -69,7 +72,7 @@ src/
 ├── lib/           # supabase client, permissions matrix, utils
 └── types/         # hand-written types mirroring supabase/migrations
 
-supabase/migrations/   # 0001-0012, the full database schema + RLS policies
+supabase/migrations/   # 0001-0021, the full database schema + RLS policies
 docs/                    # architecture, schema, permissions, security, roadmap
 ```
 

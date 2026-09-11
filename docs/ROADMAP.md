@@ -30,8 +30,10 @@ A working, deployable slice of BizLab, not a mockup:
   changes, billing/plan display, security policy toggles + audit log
   viewer.
 
-This is genuinely usable for a small team today, once pointed at a real
-Supabase project (see repository README for setup).
+This is genuinely usable for a small team today — a live Supabase project
+now backs the repo (see README), with all 21 migrations applied and
+verified, including two real, execution-only-discoverable security fixes
+(see `docs/AUDIT_REPORT.md`).
 
 ## Explicitly deferred (and why)
 
@@ -52,7 +54,8 @@ concrete reason rather than an oversight:
 ## Phased plan
 
 ### Phase 1 — Beta-ready (2-3 weeks of focused work)
-1. Provision a real Supabase project, run migrations, connect `.env.local`.
+1. ~~Provision a real Supabase project, run migrations, connect
+   `.env.local`.~~ Done — see `docs/AUDIT_REPORT.md`.
 2. Wire invite emails (Resend/Postmark) so `company_invitations` actually
    notifies people.
 3. Swap the Documents/Knowledge plain-text editor for Tiptap (same JSONB
