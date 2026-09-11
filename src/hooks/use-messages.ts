@@ -3,6 +3,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/hooks/use-auth";
 import { useWorkspace } from "@/hooks/use-workspace";
+import { sanitizeFileName, validateFile } from "@/lib/file-policy";
 import type { ChatMessage } from "@/types/database";
 
 interface ChatReaction {
@@ -15,6 +16,8 @@ interface ChatReaction {
 export interface ChatMessageWithReactions extends ChatMessage {
   chat_reactions: ChatReaction[];
 }
+
+const ATTACHMENTS_BUCKET = "company-files";
 
 export function useMessages(channelId: string | undefined) {
   const queryClient = useQueryClient();
@@ -60,17 +63,49 @@ export function useMessages(channelId: string | undefined) {
 
 export function useSendMessage(channelId: string | undefined) {
   const { user } = useAuth();
+  const { company } = useWorkspace();
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async ({ body, parentMessageId }: { body: string; parentMessageId?: string }) => {
-      const { error } = await supabase
-        .from("chat_messages")
-        .insert({ channel_id: channelId!, author_id: user!.id, body, parent_message_id: parentMessageId ?? null });
+    mutationFn: async ({
+      body,
+      parentMessageId,
+      files,
+    }: {
+      body: string;
+      parentMessageId?: string;
+      files?: File[];
+    }) => {
+      const attachments = [];
+      for (const file of files ?? []) {
+        const validationError = validateFile(file);
+        if (validationError) throw new Error(validationError);
+
+        const safeName = sanitizeFileName(file.name);
+        const storagePath = `${company!.id}/${crypto.randomUUID()}-${safeName}`;
+        const { error: uploadError } = await supabase.storage.from(ATTACHMENTS_BUCKET).upload(storagePath, file);
+        if (uploadError) throw uploadError;
+
+        attachments.push({ name: safeName, storage_path: storagePath, size: file.size, mime_type: file.type });
+      }
+
+      const { error } = await supabase.from("chat_messages").insert({
+        channel_id: channelId!,
+        author_id: user!.id,
+        body,
+        parent_message_id: parentMessageId ?? null,
+        attachments,
+      });
       if (error) throw error;
     },
     onSuccess: () => void queryClient.invalidateQueries({ queryKey: ["messages", channelId] }),
   });
+}
+
+export async function getAttachmentDownloadUrl(storagePath: string) {
+  const { data, error } = await supabase.storage.from(ATTACHMENTS_BUCKET).createSignedUrl(storagePath, 60);
+  if (error) throw error;
+  return data.signedUrl;
 }
 
 export function useEditMessage(channelId: string | undefined) {

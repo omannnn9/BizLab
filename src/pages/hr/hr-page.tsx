@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { format } from "date-fns";
-import { Plus } from "lucide-react";
+import { Building2, Plus, Trash2 } from "lucide-react";
 import { PageHeader } from "@/components/shared/page-header";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -22,16 +22,23 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { EmptyState } from "@/components/shared/empty-state";
 import {
   useAddEmployee,
+  useCreateDepartment,
   useCreateLeaveRequest,
+  useDeleteDepartment,
+  useDepartments,
   useEmployees,
   useLeaveRequests,
   useMyEmployeeRecord,
   useReviewLeaveRequest,
+  useSetEmployeeDepartment,
 } from "@/hooks/use-hr";
 import { useCompanyMembers } from "@/hooks/use-members";
 import { usePermissions } from "@/hooks/use-permissions";
+
+const NO_DEPARTMENT = "none";
 
 const LEAVE_STATUS_VARIANT = {
   pending: "secondary",
@@ -45,18 +52,26 @@ export function HrPage() {
   const { data: leaveRequests } = useLeaveRequests();
   const { data: myRecord } = useMyEmployeeRecord();
   const { data: members } = useCompanyMembers();
+  const { data: departments } = useDepartments();
   const addEmployee = useAddEmployee();
   const createLeaveRequest = useCreateLeaveRequest();
   const reviewLeaveRequest = useReviewLeaveRequest();
+  const createDepartment = useCreateDepartment();
+  const deleteDepartment = useDeleteDepartment();
+  const setEmployeeDepartment = useSetEmployeeDepartment();
   const { can } = usePermissions();
 
   const [addEmployeeOpen, setAddEmployeeOpen] = useState(false);
   const [leaveDialogOpen, setLeaveDialogOpen] = useState(false);
+  const [departmentDialogOpen, setDepartmentDialogOpen] = useState(false);
   const [pickedMemberId, setPickedMemberId] = useState("");
   const [jobTitle, setJobTitle] = useState("");
+  const [employeeDepartmentId, setEmployeeDepartmentId] = useState(NO_DEPARTMENT);
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
   const [reason, setReason] = useState("");
+  const [departmentName, setDepartmentName] = useState("");
+  const [departmentLeadId, setDepartmentLeadId] = useState(NO_DEPARTMENT);
 
   const unstaffedMembers = members?.filter((m) => !employees?.some((e) => e.member_id === m.id)) ?? [];
   const canManage = can("hr", "create");
@@ -79,6 +94,7 @@ export function HrPage() {
         <div className="px-6 pt-3">
           <TabsList>
             <TabsTrigger value="employees">Employees</TabsTrigger>
+            <TabsTrigger value="departments">Departments</TabsTrigger>
             <TabsTrigger value="leave">Leave requests</TabsTrigger>
           </TabsList>
         </div>
@@ -97,6 +113,7 @@ export function HrPage() {
                 <tr>
                   <th className="px-4 py-2 font-medium">Name</th>
                   <th className="px-4 py-2 font-medium">Title</th>
+                  <th className="px-4 py-2 font-medium">Department</th>
                   <th className="px-4 py-2 font-medium">Type</th>
                   <th className="px-4 py-2 font-medium">Status</th>
                 </tr>
@@ -113,6 +130,29 @@ export function HrPage() {
                       {emp.member?.profile?.full_name ?? emp.member?.profile?.email}
                     </td>
                     <td className="px-4 py-2.5 text-muted-foreground">{emp.job_title ?? "—"}</td>
+                    <td className="px-4 py-2.5">
+                      {canManage ? (
+                        <Select
+                          value={emp.department_id ?? NO_DEPARTMENT}
+                          onValueChange={(v) =>
+                            setEmployeeDepartment.mutate({
+                              employeeId: emp.id,
+                              departmentId: v === NO_DEPARTMENT ? null : v,
+                            })
+                          }
+                        >
+                          <SelectTrigger className="h-7 w-40 text-xs"><SelectValue /></SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value={NO_DEPARTMENT}>No department</SelectItem>
+                            {departments?.map((d) => (
+                              <SelectItem key={d.id} value={d.id}>{d.name}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      ) : (
+                        <span className="text-muted-foreground">{emp.department?.name ?? "—"}</span>
+                      )}
+                    </td>
                     <td className="px-4 py-2.5 text-muted-foreground capitalize">
                       {emp.employment_type.replace("_", " ")}
                     </td>
@@ -123,7 +163,7 @@ export function HrPage() {
                 ))}
                 {(!employees || employees.length === 0) && (
                   <tr>
-                    <td colSpan={4} className="px-4 py-6 text-center text-muted-foreground">
+                    <td colSpan={5} className="px-4 py-6 text-center text-muted-foreground">
                       No employee records yet.
                     </td>
                   </tr>
@@ -131,6 +171,64 @@ export function HrPage() {
               </tbody>
             </table>
           </div>
+        </TabsContent>
+
+        <TabsContent value="departments" className="flex-1 overflow-y-auto px-6 py-4">
+          {canManage && (
+            <div className="mb-3 flex justify-end">
+              <Button size="sm" variant="outline" onClick={() => setDepartmentDialogOpen(true)}>
+                <Plus className="size-3.5" /> New department
+              </Button>
+            </div>
+          )}
+          {departments && departments.length > 0 ? (
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+              {departments.map((dept) => {
+                const headcount = employees?.filter((e) => e.department_id === dept.id).length ?? 0;
+                return (
+                  <div key={dept.id} className="flex flex-col gap-2 rounded-lg border bg-card p-4">
+                    <div className="flex items-start justify-between">
+                      <div className="flex items-center gap-2">
+                        <Building2 className="size-4 text-primary" />
+                        <p className="text-sm font-medium">{dept.name}</p>
+                      </div>
+                      {canManage && (
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="size-6"
+                          onClick={() => deleteDepartment.mutate(dept.id)}
+                        >
+                          <Trash2 className="size-3.5" />
+                        </Button>
+                      )}
+                    </div>
+                    <p className="text-xs text-muted-foreground">
+                      {dept.lead?.profile?.full_name ?? dept.lead?.profile?.email
+                        ? `Led by ${dept.lead?.profile?.full_name ?? dept.lead?.profile?.email}`
+                        : "No lead assigned"}
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      {headcount} {headcount === 1 ? "person" : "people"}
+                    </p>
+                  </div>
+                );
+              })}
+            </div>
+          ) : (
+            <EmptyState
+              icon={Building2}
+              title="No departments yet"
+              description="Group employees by department to organize your org chart and reporting."
+              action={
+                canManage ? (
+                  <Button size="sm" onClick={() => setDepartmentDialogOpen(true)}>
+                    <Plus /> New department
+                  </Button>
+                ) : undefined
+              }
+            />
+          )}
         </TabsContent>
 
         <TabsContent value="leave" className="flex-1 overflow-y-auto px-6 py-4">
@@ -193,9 +291,14 @@ export function HrPage() {
             onSubmit={async (e) => {
               e.preventDefault();
               if (!pickedMemberId) return;
-              await addEmployee.mutateAsync({ memberId: pickedMemberId, jobTitle });
+              await addEmployee.mutateAsync({
+                memberId: pickedMemberId,
+                jobTitle,
+                departmentId: employeeDepartmentId === NO_DEPARTMENT ? null : employeeDepartmentId,
+              });
               setPickedMemberId("");
               setJobTitle("");
+              setEmployeeDepartmentId(NO_DEPARTMENT);
               setAddEmployeeOpen(false);
             }}
           >
@@ -214,8 +317,67 @@ export function HrPage() {
               <Label htmlFor="jobTitle">Job title</Label>
               <Input id="jobTitle" value={jobTitle} onChange={(e) => setJobTitle(e.target.value)} />
             </div>
+            <div className="flex flex-col gap-1.5">
+              <Label>Department</Label>
+              <Select value={employeeDepartmentId} onValueChange={setEmployeeDepartmentId}>
+                <SelectTrigger className="w-full"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value={NO_DEPARTMENT}>No department</SelectItem>
+                  {departments?.map((d) => (
+                    <SelectItem key={d.id} value={d.id}>{d.name}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
             <DialogFooter>
               <Button type="submit" disabled={addEmployee.isPending}>Add</Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={departmentDialogOpen} onOpenChange={setDepartmentDialogOpen}>
+        <DialogContent>
+          <DialogHeader><DialogTitle>New department</DialogTitle></DialogHeader>
+          <form
+            className="flex flex-col gap-4"
+            onSubmit={async (e) => {
+              e.preventDefault();
+              if (!departmentName.trim()) return;
+              await createDepartment.mutateAsync({
+                name: departmentName,
+                leadMemberId: departmentLeadId === NO_DEPARTMENT ? null : departmentLeadId,
+              });
+              setDepartmentName("");
+              setDepartmentLeadId(NO_DEPARTMENT);
+              setDepartmentDialogOpen(false);
+            }}
+          >
+            <div className="flex flex-col gap-1.5">
+              <Label htmlFor="departmentName">Name</Label>
+              <Input
+                id="departmentName"
+                value={departmentName}
+                onChange={(e) => setDepartmentName(e.target.value)}
+                autoFocus
+                required
+                placeholder="Engineering"
+              />
+            </div>
+            <div className="flex flex-col gap-1.5">
+              <Label>Department lead</Label>
+              <Select value={departmentLeadId} onValueChange={setDepartmentLeadId}>
+                <SelectTrigger className="w-full"><SelectValue placeholder="Optional" /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value={NO_DEPARTMENT}>No lead</SelectItem>
+                  {members?.map((m) => (
+                    <SelectItem key={m.id} value={m.id}>{m.profile?.full_name ?? m.profile?.email}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <DialogFooter>
+              <Button type="submit" disabled={createDepartment.isPending}>Create department</Button>
             </DialogFooter>
           </form>
         </DialogContent>

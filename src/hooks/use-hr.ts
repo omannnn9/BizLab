@@ -4,6 +4,15 @@ import { useAuth } from "@/hooks/use-auth";
 import { useWorkspace } from "@/hooks/use-workspace";
 import type { CompanyMember } from "@/types/database";
 
+export interface HrDepartment {
+  id: string;
+  company_id: string;
+  name: string;
+  lead_member_id: string | null;
+  created_at: string;
+  lead?: CompanyMember | null;
+}
+
 export interface HrEmployee {
   id: string;
   company_id: string;
@@ -14,6 +23,7 @@ export interface HrEmployee {
   status: "active" | "on_leave" | "terminated";
   start_date: string | null;
   member?: CompanyMember;
+  department?: Pick<HrDepartment, "id" | "name"> | null;
 }
 
 export interface HrLeaveRequest {
@@ -36,11 +46,74 @@ export function useEmployees() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("hr_employees")
-        .select("*, member:company_members(*, profile:profiles(*))")
+        .select("*, member:company_members(*, profile:profiles(*)), department:hr_departments(id, name)")
         .eq("company_id", company!.id);
       if (error) throw error;
       return (data ?? []) as unknown as HrEmployee[];
     },
+  });
+}
+
+export function useDepartments() {
+  const { company } = useWorkspace();
+  return useQuery({
+    queryKey: ["hr-departments", company?.id],
+    enabled: !!company,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("hr_departments")
+        .select("*, lead:company_members!hr_departments_lead_member_id_fkey(*, profile:profiles(*))")
+        .eq("company_id", company!.id)
+        .order("name", { ascending: true });
+      if (error) throw error;
+      return (data ?? []) as unknown as HrDepartment[];
+    },
+  });
+}
+
+export function useCreateDepartment() {
+  const { company } = useWorkspace();
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (input: { name: string; leadMemberId?: string | null }) => {
+      const { error } = await supabase.from("hr_departments").insert({
+        company_id: company!.id,
+        name: input.name,
+        lead_member_id: input.leadMemberId || null,
+      });
+      if (error) throw error;
+    },
+    onSuccess: () => void queryClient.invalidateQueries({ queryKey: ["hr-departments", company?.id] }),
+  });
+}
+
+export function useDeleteDepartment() {
+  const { company } = useWorkspace();
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from("hr_departments").delete().eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: ["hr-departments", company?.id] });
+      void queryClient.invalidateQueries({ queryKey: ["hr-employees", company?.id] });
+    },
+  });
+}
+
+export function useSetEmployeeDepartment() {
+  const { company } = useWorkspace();
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ employeeId, departmentId }: { employeeId: string; departmentId: string | null }) => {
+      const { error } = await supabase
+        .from("hr_employees")
+        .update({ department_id: departmentId })
+        .eq("id", employeeId);
+      if (error) throw error;
+    },
+    onSuccess: () => void queryClient.invalidateQueries({ queryKey: ["hr-employees", company?.id] }),
   });
 }
 
@@ -65,10 +138,13 @@ export function useAddEmployee() {
   const { company } = useWorkspace();
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async (input: { memberId: string; jobTitle?: string }) => {
-      const { error } = await supabase
-        .from("hr_employees")
-        .insert({ company_id: company!.id, member_id: input.memberId, job_title: input.jobTitle || null });
+    mutationFn: async (input: { memberId: string; jobTitle?: string; departmentId?: string | null }) => {
+      const { error } = await supabase.from("hr_employees").insert({
+        company_id: company!.id,
+        member_id: input.memberId,
+        job_title: input.jobTitle || null,
+        department_id: input.departmentId || null,
+      });
       if (error) throw error;
     },
     onSuccess: () => void queryClient.invalidateQueries({ queryKey: ["hr-employees", company?.id] }),

@@ -1,20 +1,47 @@
 import { useState } from "react";
 import { formatDistanceToNow } from "date-fns";
-import { Pencil, SmilePlus, Trash2 } from "lucide-react";
+import { File as FileIcon, Pencil, SmilePlus, Trash2 } from "lucide-react";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { cn } from "@/lib/utils";
+import { cn, formatBytes } from "@/lib/utils";
 import { useAuth } from "@/hooks/use-auth";
 import { useWorkspace } from "@/hooks/use-workspace";
 import {
   QUICK_REACTIONS,
+  getAttachmentDownloadUrl,
   useDeleteMessage,
   useEditMessage,
   useToggleReaction,
   type ChatMessageWithReactions,
 } from "@/hooks/use-messages";
+
+function AttachmentChip({ attachment }: { attachment: ChatMessageWithReactions["attachments"][number] }) {
+  const [opening, setOpening] = useState(false);
+
+  async function handleOpen() {
+    setOpening(true);
+    try {
+      const url = await getAttachmentDownloadUrl(attachment.storage_path);
+      window.open(url, "_blank", "noopener,noreferrer");
+    } finally {
+      setOpening(false);
+    }
+  }
+
+  return (
+    <button
+      onClick={handleOpen}
+      disabled={opening}
+      className="flex items-center gap-2 rounded-md border bg-card px-2.5 py-1.5 text-left text-xs hover:bg-accent disabled:opacity-60"
+    >
+      <FileIcon className="size-3.5 shrink-0 text-muted-foreground" />
+      <span className="min-w-0 flex-1 truncate font-medium">{attachment.name}</span>
+      <span className="shrink-0 text-muted-foreground">{formatBytes(attachment.size)}</span>
+    </button>
+  );
+}
 
 export function MessageItem({ message, channelId }: { message: ChatMessageWithReactions; channelId: string }) {
   const { user } = useAuth();
@@ -71,7 +98,16 @@ export function MessageItem({ message, channelId }: { message: ChatMessageWithRe
             </div>
           </div>
         ) : (
-          <p className="whitespace-pre-wrap text-sm">{message.body}</p>
+          <>
+            {message.body && <p className="whitespace-pre-wrap text-sm">{message.body}</p>}
+            {message.attachments && message.attachments.length > 0 && (
+              <div className="mt-1.5 flex flex-col gap-1">
+                {message.attachments.map((att) => (
+                  <AttachmentChip key={att.storage_path} attachment={att} />
+                ))}
+              </div>
+            )}
+          </>
         )}
 
         {!isDeleted && Object.keys(reactionGroups).length > 0 && (

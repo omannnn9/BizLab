@@ -1,10 +1,11 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { Hash, Plus, Send } from "lucide-react";
+import { Hash, Paperclip, Plus, Send, X } from "lucide-react";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
-import { cn } from "@/lib/utils";
+import { cn, formatBytes } from "@/lib/utils";
 import { useWorkspace } from "@/hooks/use-workspace";
 import { useChannels, useCreateChannel } from "@/hooks/use-channels";
 import { useJoinChannel } from "@/hooks/use-join-channel";
@@ -87,6 +88,8 @@ export function ChatPage() {
   const sendMessage = useSendMessage(activeChannelId);
   const { onlineUserIds, typingUsers, setTyping } = usePresence(activeChannelId);
   const [body, setBody] = useState("");
+  const [pendingFiles, setPendingFiles] = useState<File[]>([]);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   useJoinChannel(activeChannelId);
 
@@ -109,10 +112,20 @@ export function ChatPage() {
 
   async function handleSend(e: React.FormEvent) {
     e.preventDefault();
-    if (!body.trim() || !activeChannelId) return;
-    await sendMessage.mutateAsync({ body });
-    setBody("");
-    setTyping(false);
+    if ((!body.trim() && pendingFiles.length === 0) || !activeChannelId) return;
+    try {
+      await sendMessage.mutateAsync({ body, files: pendingFiles });
+      setBody("");
+      setPendingFiles([]);
+      setTyping(false);
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Could not send message");
+    }
+  }
+
+  function handlePickFiles(fileList: FileList | null) {
+    if (!fileList) return;
+    setPendingFiles((prev) => [...prev, ...Array.from(fileList)]);
   }
 
   const [channelSheetOpen, setChannelSheetOpen] = useState(false);
@@ -177,7 +190,40 @@ export function ChatPage() {
             {typingUsers.length > 0 &&
               `${typingUsers.join(", ")} ${typingUsers.length === 1 ? "is" : "are"} typing…`}
           </div>
+          {pendingFiles.length > 0 && (
+            <div className="mb-1.5 flex flex-wrap gap-1.5">
+              {pendingFiles.map((file, i) => (
+                <span
+                  key={`${file.name}-${i}`}
+                  className="flex items-center gap-1.5 rounded-md border bg-muted/40 py-1 pl-2 pr-1 text-xs"
+                >
+                  <span className="max-w-40 truncate">{file.name}</span>
+                  <span className="text-muted-foreground">{formatBytes(file.size)}</span>
+                  <button
+                    type="button"
+                    onClick={() => setPendingFiles((prev) => prev.filter((_, idx) => idx !== i))}
+                    className="rounded-full p-0.5 hover:bg-accent"
+                  >
+                    <X className="size-3" />
+                  </button>
+                </span>
+              ))}
+            </div>
+          )}
           <form onSubmit={handleSend} className="flex gap-2 pb-3">
+            <input
+              ref={fileInputRef}
+              type="file"
+              multiple
+              className="hidden"
+              onChange={(e) => {
+                handlePickFiles(e.target.files);
+                e.target.value = "";
+              }}
+            />
+            <Button type="button" variant="outline" size="icon" onClick={() => fileInputRef.current?.click()}>
+              <Paperclip className="size-4" />
+            </Button>
             <Input
               value={body}
               onChange={(e) => {
@@ -186,7 +232,7 @@ export function ChatPage() {
               }}
               placeholder={`Message #${activeChannel?.name ?? ""}`}
             />
-            <Button type="submit" size="icon">
+            <Button type="submit" size="icon" disabled={sendMessage.isPending}>
               <Send className="size-4" />
             </Button>
           </form>
