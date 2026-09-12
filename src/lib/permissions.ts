@@ -24,7 +24,7 @@ export const ROLE_LABELS: Record<CompanyRole, string> = {
 };
 
 export const ROLE_DESCRIPTIONS: Record<CompanyRole, string> = {
-  owner: "Full access to everything, including billing and company deletion.",
+  owner: "Full access to everything, including company deletion.",
   admin: "Manages workspace settings, members, and permissions.",
   manager: "Manages projects, teams, and approves knowledge base content.",
   employee: "Standard access to assigned projects, tasks, and shared content.",
@@ -38,7 +38,6 @@ export function hasMinRole(role: CompanyRole | undefined, minRole: CompanyRole):
 
 export type Resource =
   | "workspace_settings"
-  | "billing"
   | "members"
   | "projects"
   | "tasks"
@@ -58,7 +57,6 @@ export type Action = "view" | "create" | "edit" | "delete" | "manage";
 /** Minimum role required for each (resource, action) pair. */
 export const PERMISSION_MATRIX: Record<Resource, Partial<Record<Action, CompanyRole>>> = {
   workspace_settings: { view: "employee", edit: "admin", manage: "owner" },
-  billing: { view: "admin", manage: "owner" },
   members: { view: "employee", create: "admin", edit: "admin", delete: "admin" },
   projects: { view: "employee", create: "manager", edit: "manager", delete: "admin" },
   tasks: { view: "employee", create: "employee", edit: "employee", delete: "manager" },

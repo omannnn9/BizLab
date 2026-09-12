@@ -54,9 +54,6 @@ const GeneralSettingsPage = lazy(() =>
 const MembersSettingsPage = lazy(() =>
   import("@/pages/settings/members-settings-page").then((m) => ({ default: m.MembersSettingsPage }))
 );
-const BillingSettingsPage = lazy(() =>
-  import("@/pages/settings/billing-settings-page").then((m) => ({ default: m.BillingSettingsPage }))
-);
 const SecuritySettingsPage = lazy(() =>
   import("@/pages/settings/security-settings-page").then((m) => ({ default: m.SecuritySettingsPage }))
 );
@@ -124,7 +121,6 @@ export default function App() {
                         <Route index element={<Navigate to="general" replace />} />
                         <Route path="general" element={<GeneralSettingsPage />} />
                         <Route path="members" element={<MembersSettingsPage />} />
-                        <Route path="billing" element={<BillingSettingsPage />} />
                         <Route path="security" element={<SecuritySettingsPage />} />
                         <Route path="administration" element={<AdministrationPage />} />
                       </Route>

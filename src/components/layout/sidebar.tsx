@@ -8,7 +8,6 @@ import {
   FileText,
   FolderOpen,
   LayoutDashboard,
-  Lock,
   MessagesSquare,
   PenTool,
   Settings,
@@ -18,23 +17,22 @@ import {
 import { cn } from "@/lib/utils";
 import { useWorkspace } from "@/hooks/use-workspace";
 import { usePermissions } from "@/hooks/use-permissions";
-import { useFeatureEnabled } from "@/hooks/use-billing";
 
-const NAV_ITEMS: { to: string; label: string; icon: typeof LayoutDashboard; end?: boolean; feature?: string }[] = [
+const NAV_ITEMS: { to: string; label: string; icon: typeof LayoutDashboard; end?: boolean }[] = [
   { to: "", label: "Dashboard", icon: LayoutDashboard, end: true },
   { to: "tasks", label: "Tasks", icon: CheckSquare },
   { to: "projects", label: "Projects", icon: FolderKanban },
   { to: "documents", label: "Documents", icon: FileText },
   { to: "files", label: "Files", icon: FolderOpen },
   { to: "chat", label: "Chat", icon: MessagesSquare },
-  { to: "whiteboards", label: "Whiteboards", icon: PenTool, feature: "whiteboards" },
-  { to: "knowledge", label: "Knowledge Hub", icon: BookOpen, feature: "knowledge_hub" },
+  { to: "whiteboards", label: "Whiteboards", icon: PenTool },
+  { to: "knowledge", label: "Knowledge Hub", icon: BookOpen },
 ];
 
 const BUSINESS_NAV_ITEMS = [
-  { to: "crm", label: "CRM", icon: Briefcase, resource: "crm", feature: "crm" },
-  { to: "hr", label: "HR", icon: Users, resource: "hr", feature: "hr" },
-  { to: "finance", label: "Finance", icon: DollarSign, resource: "finance", feature: "finance" },
+  { to: "crm", label: "CRM", icon: Briefcase, resource: "crm" },
+  { to: "hr", label: "HR", icon: Users, resource: "hr" },
+  { to: "finance", label: "Finance", icon: DollarSign, resource: "finance" },
 ] as const;
 
 function NavItem({
@@ -42,27 +40,12 @@ function NavItem({
   label,
   icon: Icon,
   end,
-  locked,
 }: {
   to: string;
   label: string;
   icon: typeof LayoutDashboard;
   end?: boolean;
-  locked?: boolean;
 }) {
-  if (locked) {
-    return (
-      <NavLink
-        to="settings/billing"
-        className="flex items-center gap-2.5 rounded-md px-2.5 py-1.5 text-sm font-medium text-sidebar-foreground/40 hover:bg-accent/50"
-        title={`${label} isn't included in your plan — upgrade to unlock`}
-      >
-        <Icon className="size-4" />
-        {label}
-        <Lock className="ml-auto size-3" />
-      </NavLink>
-    );
-  }
   return (
     <NavLink
       to={to}
@@ -85,18 +68,6 @@ function NavItem({
 export function SidebarNav({ onNavigate }: { onNavigate?: () => void }) {
   const { company } = useWorkspace();
   const { can } = usePermissions();
-  const whiteboardsEnabled = useFeatureEnabled("whiteboards");
-  const knowledgeHubEnabled = useFeatureEnabled("knowledge_hub");
-  const crmEnabled = useFeatureEnabled("crm");
-  const hrEnabled = useFeatureEnabled("hr");
-  const financeEnabled = useFeatureEnabled("finance");
-  const featureFlags: Record<string, boolean> = {
-    whiteboards: whiteboardsEnabled,
-    knowledge_hub: knowledgeHubEnabled,
-    crm: crmEnabled,
-    hr: hrEnabled,
-    finance: financeEnabled,
-  };
 
   const visibleBusinessItems = BUSINESS_NAV_ITEMS.filter((item) => can(item.resource, "view"));
 
@@ -104,27 +75,14 @@ export function SidebarNav({ onNavigate }: { onNavigate?: () => void }) {
     <div className="flex h-full flex-col" onClick={onNavigate}>
       <nav className="flex-1 space-y-0.5 overflow-y-auto p-3">
         {NAV_ITEMS.map((item) => (
-          <NavItem
-            key={item.label}
-            to={item.to}
-            label={item.label}
-            icon={item.icon}
-            end={item.end}
-            locked={!!item.feature && !featureFlags[item.feature]}
-          />
+          <NavItem key={item.label} to={item.to} label={item.label} icon={item.icon} end={item.end} />
         ))}
 
         {visibleBusinessItems.length > 0 && (
           <>
             <p className="mt-4 mb-1 px-2.5 text-xs font-medium text-muted-foreground">Business</p>
             {visibleBusinessItems.map((item) => (
-              <NavItem
-                key={item.label}
-                to={item.to}
-                label={item.label}
-                icon={item.icon}
-                locked={!featureFlags[item.feature]}
-              />
+              <NavItem key={item.label} to={item.to} label={item.label} icon={item.icon} />
             ))}
           </>
         )}

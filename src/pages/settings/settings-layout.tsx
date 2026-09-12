@@ -6,7 +6,6 @@ import { useAuth } from "@/hooks/use-auth";
 const TABS = [
   { to: "general", label: "General" },
   { to: "members", label: "Members" },
-  { to: "billing", label: "Billing" },
   { to: "security", label: "Security" },
 ];
 
