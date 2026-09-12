@@ -14,10 +14,11 @@ import {
 } from "@/hooks/use-documents";
 import { useAddDocumentComment, useDocumentComments } from "@/hooks/use-document-comments";
 import { useWorkspace } from "@/hooks/use-workspace";
-import { BlockEditor } from "@/components/documents/block-editor";
+import { RichTextEditor } from "@/components/documents/rich-text-editor";
 import { VersionHistoryPanel } from "@/components/documents/version-history-panel";
 import { ShareDialog } from "@/components/documents/share-dialog";
-import { normalizeContent, type DocContent } from "@/lib/document-blocks";
+import { normalizeRichContent } from "@/lib/tiptap-content";
+import type { JSONContent } from "@tiptap/react";
 
 export function DocumentEditorPage() {
   const { documentId } = useParams<{ documentId: string }>();
@@ -33,7 +34,7 @@ export function DocumentEditorPage() {
   const navigate = useNavigate();
 
   const [title, setTitle] = useState("");
-  const [content, setContent] = useState<DocContent>({ blocks: [] });
+  const [content, setContent] = useState<JSONContent>({ type: "doc", content: [] });
   const [panel, setPanel] = useState<"none" | "comments" | "history">("none");
   const [shareOpen, setShareOpen] = useState(false);
   const [commentBody, setCommentBody] = useState("");
@@ -44,7 +45,7 @@ export function DocumentEditorPage() {
   useEffect(() => {
     if (document && !initialized.current) {
       setTitle(document.title);
-      setContent(normalizeContent(document.content));
+      setContent(normalizeRichContent(document.content));
       initialized.current = true;
     }
   }, [document]);
@@ -128,7 +129,7 @@ export function DocumentEditorPage() {
             className="w-full border-none bg-transparent text-3xl font-bold tracking-tight outline-none placeholder:text-muted-foreground"
           />
           <div className="mt-6">
-            <BlockEditor content={content} onChange={setContent} />
+            <RichTextEditor content={content} onChange={setContent} />
           </div>
 
           <div className="mt-10 border-t pt-4">

@@ -1,8 +1,8 @@
 import { useEffect, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { ArrowLeft, Check, Loader2 } from "lucide-react";
+import type { JSONContent } from "@tiptap/react";
 import { Button } from "@/components/ui/button";
-import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import {
   Select,
@@ -11,6 +11,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { RichTextEditor } from "@/components/documents/rich-text-editor";
+import { normalizeRichContent } from "@/lib/tiptap-content";
 import { useKnowledgeArticle, useUpdateKnowledgeArticle } from "@/hooks/use-knowledge";
 import { useWorkspace } from "@/hooks/use-workspace";
 import type { KnowledgeCategory } from "@/types/database";
@@ -25,7 +27,7 @@ export function KnowledgeArticlePage() {
   const navigate = useNavigate();
 
   const [title, setTitle] = useState("");
-  const [text, setText] = useState("");
+  const [content, setContent] = useState<JSONContent>({ type: "doc", content: [] });
   const [category, setCategory] = useState<KnowledgeCategory>("general");
   const [isPublished, setIsPublished] = useState(false);
   const [status, setStatus] = useState<"idle" | "saving" | "saved">("idle");
@@ -35,7 +37,7 @@ export function KnowledgeArticlePage() {
   useEffect(() => {
     if (article && !initialized.current) {
       setTitle(article.title);
-      setText((article.content as { text?: string })?.text ?? "");
+      setContent(normalizeRichContent(article.content));
       setCategory(article.category);
       setIsPublished(article.is_published);
       initialized.current = true;
@@ -47,12 +49,12 @@ export function KnowledgeArticlePage() {
     setStatus("saving");
     clearTimeout(timer.current);
     timer.current = setTimeout(async () => {
-      await updateArticle.mutateAsync({ id: articleId, title, content: { text }, category, is_published: isPublished });
+      await updateArticle.mutateAsync({ id: articleId, title, content, category, is_published: isPublished });
       setStatus("saved");
     }, 700);
     return () => clearTimeout(timer.current);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [title, text, category, isPublished]);
+  }, [title, content, category, isPublished]);
 
   if (isLoading || !article) return null;
 
@@ -89,12 +91,9 @@ export function KnowledgeArticlePage() {
           placeholder="Untitled"
           className="w-full border-none bg-transparent text-3xl font-bold tracking-tight outline-none placeholder:text-muted-foreground"
         />
-        <Textarea
-          value={text}
-          onChange={(e) => setText(e.target.value)}
-          placeholder="Write your SOP, policy or guide…"
-          className="mt-6 min-h-[60vh] resize-none border-none px-0 text-base shadow-none focus-visible:ring-0"
-        />
+        <div className="mt-6">
+          <RichTextEditor content={content} onChange={setContent} />
+        </div>
       </div>
     </div>
   );

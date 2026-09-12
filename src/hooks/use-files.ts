@@ -3,6 +3,7 @@ import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/hooks/use-auth";
 import { useWorkspace } from "@/hooks/use-workspace";
 import { sanitizeFileName, validateFile } from "@/lib/file-policy";
+import { formatBytes } from "@/lib/utils";
 import type { FileObject } from "@/types/database";
 
 const BUCKET = "company-files";
@@ -36,6 +37,23 @@ export function useUploadFile(folderId: string | null) {
     mutationFn: async (file: File) => {
       const validationError = validateFile(file);
       if (validationError) throw new Error(validationError);
+
+      // Soft pre-check so an over-quota upload fails fast with a plain
+      // message instead of only after the bytes are already in Storage
+      // and the DB trigger (check_storage_quota, the real enforcement
+      // boundary) rejects the row.
+      const { data: usage } = await supabase
+        .from("company_storage_usage")
+        .select("used_bytes")
+        .eq("company_id", company!.id)
+        .maybeSingle();
+      const used = usage?.used_bytes ?? 0;
+      const quota = company!.storage_quota_bytes;
+      if (used + file.size > quota) {
+        throw new Error(
+          `This upload would exceed your storage quota (${formatBytes(used)} of ${formatBytes(quota)} used, ${formatBytes(file.size)} needed).`
+        );
+      }
 
       const safeName = sanitizeFileName(file.name);
       const storagePath = `${company!.id}/${crypto.randomUUID()}-${safeName}`;

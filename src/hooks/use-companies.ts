@@ -34,6 +34,15 @@ export function useUpdateCompany() {
     mutationFn: async ({ id, ...patch }: Partial<Company> & { id: string }) => {
       const { data, error } = await supabase.from("companies").update(patch).eq("id", id).select().single();
       if (error) throw error;
+      if (patch.security_settings) {
+        await supabase.rpc("log_audit_event", {
+          p_company_id: id,
+          p_action: "company.security_settings_changed",
+          p_target_type: "company",
+          p_target_id: id,
+          p_metadata: patch.security_settings,
+        });
+      }
       return data as Company;
     },
     onSuccess: () => void queryClient.invalidateQueries({ queryKey: ["my-companies", user?.id] }),

@@ -48,6 +48,13 @@ export function useUpdateMemberRole() {
     mutationFn: async ({ memberId, role }: { memberId: string; role: CompanyRole }) => {
       const { error } = await supabase.from("company_members").update({ role }).eq("id", memberId);
       if (error) throw error;
+      await supabase.rpc("log_audit_event", {
+        p_company_id: company!.id,
+        p_action: "member.role_changed",
+        p_target_type: "company_member",
+        p_target_id: memberId,
+        p_metadata: { new_role: role },
+      });
     },
     onSuccess: () => void queryClient.invalidateQueries({ queryKey: ["company-members", company?.id] }),
   });
@@ -61,6 +68,12 @@ export function useRemoveMember() {
     mutationFn: async (memberId: string) => {
       const { error } = await supabase.from("company_members").delete().eq("id", memberId);
       if (error) throw error;
+      await supabase.rpc("log_audit_event", {
+        p_company_id: company!.id,
+        p_action: "member.removed",
+        p_target_type: "company_member",
+        p_target_id: memberId,
+      });
     },
     onSuccess: () => void queryClient.invalidateQueries({ queryKey: ["company-members", company?.id] }),
   });

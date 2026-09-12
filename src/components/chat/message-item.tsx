@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { formatDistanceToNow } from "date-fns";
-import { File as FileIcon, Pencil, SmilePlus, Trash2 } from "lucide-react";
+import { File as FileIcon, MessageSquare, Pencil, SmilePlus, Trash2 } from "lucide-react";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -43,7 +43,17 @@ function AttachmentChip({ attachment }: { attachment: ChatMessageWithReactions["
   );
 }
 
-export function MessageItem({ message, channelId }: { message: ChatMessageWithReactions; channelId: string }) {
+export function MessageItem({
+  message,
+  channelId,
+  replyCount,
+  onOpenThread,
+}: {
+  message: ChatMessageWithReactions;
+  channelId: string;
+  replyCount?: number;
+  onOpenThread?: () => void;
+}) {
   const { user } = useAuth();
   const { membership } = useWorkspace();
   const editMessage = useEditMessage(channelId);
@@ -126,10 +136,25 @@ export function MessageItem({ message, channelId }: { message: ChatMessageWithRe
             ))}
           </div>
         )}
+
+        {!isDeleted && onOpenThread && !!replyCount && (
+          <button
+            onClick={onOpenThread}
+            className="mt-1.5 flex items-center gap-1.5 text-xs font-medium text-primary hover:underline"
+          >
+            <MessageSquare className="size-3.5" />
+            {replyCount} {replyCount === 1 ? "reply" : "replies"}
+          </button>
+        )}
       </div>
 
       {!isDeleted && (
         <div className="flex h-fit items-center gap-0.5 opacity-0 transition-opacity group-hover:opacity-100">
+          {onOpenThread && (
+            <Button variant="ghost" size="icon" className="size-7" onClick={onOpenThread} title="Reply in thread">
+              <MessageSquare className="size-3.5" />
+            </Button>
+          )}
           <Popover>
             <PopoverTrigger asChild>
               <Button variant="ghost" size="icon" className="size-7">

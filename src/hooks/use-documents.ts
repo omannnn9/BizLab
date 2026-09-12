@@ -2,7 +2,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/hooks/use-auth";
 import { useWorkspace } from "@/hooks/use-workspace";
-import { emptyContent } from "@/lib/document-blocks";
+import { emptyRichContent } from "@/lib/tiptap-content";
 import type { Document, DocAccessLevel, Profile } from "@/types/database";
 
 export function useDocuments(folderId: string | null) {
@@ -92,7 +92,7 @@ export function useCreateDocument() {
           folder_id: input.folderId ?? null,
           parent_document_id: input.parentDocumentId ?? null,
           title: input.fromTemplate?.title ?? input.title ?? "Untitled",
-          content: input.fromTemplate?.content ?? emptyContent(),
+          content: input.fromTemplate?.content ?? emptyRichContent(),
           created_by: user!.id,
         })
         .select()
@@ -210,6 +210,7 @@ export function useDocumentPermissions(documentId: string | undefined) {
 
 export function useShareDocument(documentId: string | undefined) {
   const { user } = useAuth();
+  const { company } = useWorkspace();
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async ({ memberId, accessLevel }: { memberId: string; accessLevel: DocAccessLevel }) => {
@@ -220,17 +221,31 @@ export function useShareDocument(documentId: string | undefined) {
           { onConflict: "document_id,member_id" }
         );
       if (error) throw error;
+      await supabase.rpc("log_audit_event", {
+        p_company_id: company!.id,
+        p_action: "document.shared",
+        p_target_type: "document",
+        p_target_id: documentId,
+        p_metadata: { member_id: memberId, access_level: accessLevel },
+      });
     },
     onSuccess: () => void queryClient.invalidateQueries({ queryKey: ["document-permissions", documentId] }),
   });
 }
 
 export function useRevokeDocumentShare(documentId: string | undefined) {
+  const { company } = useWorkspace();
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (permissionId: string) => {
       const { error } = await supabase.from("document_permissions").delete().eq("id", permissionId);
       if (error) throw error;
+      await supabase.rpc("log_audit_event", {
+        p_company_id: company!.id,
+        p_action: "document.share_revoked",
+        p_target_type: "document",
+        p_target_id: documentId,
+      });
     },
     onSuccess: () => void queryClient.invalidateQueries({ queryKey: ["document-permissions", documentId] }),
   });

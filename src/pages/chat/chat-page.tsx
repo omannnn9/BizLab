@@ -12,6 +12,7 @@ import { useJoinChannel } from "@/hooks/use-join-channel";
 import { useMessages, useSendMessage } from "@/hooks/use-messages";
 import { usePresence } from "@/hooks/use-presence";
 import { MessageItem } from "@/components/chat/message-item";
+import { ThreadPanel } from "@/components/chat/thread-panel";
 import type { ChatChannel } from "@/types/database";
 
 function ChannelList({
@@ -90,6 +91,17 @@ export function ChatPage() {
   const [body, setBody] = useState("");
   const [pendingFiles, setPendingFiles] = useState<File[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [activeThreadId, setActiveThreadId] = useState<string | null>(null);
+
+  const topLevelMessages = messages?.filter((m) => !m.parent_message_id);
+  const repliesByParent = new Map<string, typeof messages>();
+  for (const m of messages ?? []) {
+    if (m.parent_message_id) {
+      repliesByParent.set(m.parent_message_id, [...(repliesByParent.get(m.parent_message_id) ?? []), m]);
+    }
+  }
+  const activeThreadParent = messages?.find((m) => m.id === activeThreadId) ?? null;
+  const activeThreadReplies = (activeThreadId && repliesByParent.get(activeThreadId)) || [];
 
   useJoinChannel(activeChannelId);
 
@@ -177,10 +189,16 @@ export function ChatPage() {
         </div>
 
         <div className="flex-1 space-y-4 overflow-y-auto p-4">
-          {messages?.map((m) => (
-            <MessageItem key={m.id} message={m} channelId={activeChannelId!} />
+          {topLevelMessages?.map((m) => (
+            <MessageItem
+              key={m.id}
+              message={m}
+              channelId={activeChannelId!}
+              replyCount={repliesByParent.get(m.id)?.length}
+              onOpenThread={() => setActiveThreadId(m.id)}
+            />
           ))}
-          {(!messages || messages.length === 0) && (
+          {(!topLevelMessages || topLevelMessages.length === 0) && (
             <p className="text-sm text-muted-foreground">No messages yet. Say hello 👋</p>
           )}
         </div>
@@ -238,6 +256,14 @@ export function ChatPage() {
           </form>
         </div>
       </div>
+
+      <ThreadPanel
+        parentMessage={activeThreadParent}
+        replies={activeThreadReplies}
+        channelId={activeChannelId!}
+        open={!!activeThreadId}
+        onOpenChange={(open) => !open && setActiveThreadId(null)}
+      />
     </div>
   );
 }

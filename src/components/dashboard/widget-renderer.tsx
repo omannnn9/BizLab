@@ -169,6 +169,27 @@ export function WidgetRenderer({ widget, onRemove }: { widget: DashboardWidget; 
       );
     }
 
+    case "channel_activity": {
+      const top = stats.channelActivity.filter((c) => c.messageCount > 0).slice(0, 5);
+      return (
+        <WidgetCard title={title} onRemove={onRemove}>
+          {top.length === 0 ? (
+            <p className="text-sm text-muted-foreground">No messages in the last 7 days.</p>
+          ) : (
+            <ul className="flex flex-col gap-2">
+              {top.map((c) => (
+                <li key={c.id} className="flex items-center justify-between text-sm">
+                  <span className="truncate"># {c.name}</span>
+                  <Badge variant="outline">{c.messageCount}</Badge>
+                </li>
+              ))}
+            </ul>
+          )}
+          <p className="mt-2 text-xs text-muted-foreground">Messages in the last 7 days</p>
+        </WidgetCard>
+      );
+    }
+
     default:
       return (
         <WidgetCard title={title} onRemove={onRemove}>

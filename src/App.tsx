@@ -8,6 +8,7 @@ import { QueryProvider } from "@/providers/query-provider";
 import { ThemeProvider } from "@/providers/theme-provider";
 import { WorkspaceProvider } from "@/providers/workspace-provider";
 import { RequireAuth } from "@/routes/require-auth";
+import { MfaGuard } from "@/routes/mfa-guard";
 import { WorkspaceLayout } from "@/components/layout/workspace-layout";
 import { HomePage } from "@/pages/home";
 import { LoginPage } from "@/pages/auth/login";
@@ -89,40 +90,42 @@ export default function App() {
                   <Route path="/accept-invite" element={<AcceptInvitePage />} />
 
                   <Route element={<RequireAuth />}>
-                    <Route path="/workspaces" element={<WorkspacePicker />} />
+                    <Route element={<MfaGuard />}>
+                      <Route path="/workspaces" element={<WorkspacePicker />} />
 
-                    <Route
-                      path="/w/:slug"
-                      element={
-                        <WorkspaceProvider>
-                          <WorkspaceLayout />
-                        </WorkspaceProvider>
-                      }
-                    >
-                      <Route index element={<DashboardPage />} />
-                      <Route path="tasks" element={<TasksPage />} />
-                      <Route path="projects" element={<ProjectsPage />} />
-                      <Route path="projects/:projectId" element={<ProjectDetailPage />} />
-                      <Route path="documents" element={<DocumentsPage />} />
-                      <Route path="documents/:documentId" element={<DocumentEditorPage />} />
-                      <Route path="files" element={<FilesPage />} />
-                      <Route path="chat" element={<ChatPage />} />
-                      <Route path="chat/:channelId" element={<ChatPage />} />
-                      <Route path="whiteboards" element={<WhiteboardsPage />} />
-                      <Route path="whiteboards/:whiteboardId" element={<WhiteboardEditorPage />} />
-                      <Route path="knowledge" element={<KnowledgePage />} />
-                      <Route path="knowledge/:articleId" element={<KnowledgeArticlePage />} />
-                      <Route path="crm" element={<CrmPage />} />
-                      <Route path="hr" element={<HrPage />} />
-                      <Route path="finance" element={<FinancePage />} />
-                      <Route path="notifications" element={<NotificationsPage />} />
-                      <Route path="search" element={<SearchPage />} />
-                      <Route path="settings" element={<SettingsLayout />}>
-                        <Route index element={<Navigate to="general" replace />} />
-                        <Route path="general" element={<GeneralSettingsPage />} />
-                        <Route path="members" element={<MembersSettingsPage />} />
-                        <Route path="security" element={<SecuritySettingsPage />} />
-                        <Route path="administration" element={<AdministrationPage />} />
+                      <Route
+                        path="/w/:slug"
+                        element={
+                          <WorkspaceProvider>
+                            <WorkspaceLayout />
+                          </WorkspaceProvider>
+                        }
+                      >
+                        <Route index element={<DashboardPage />} />
+                        <Route path="tasks" element={<TasksPage />} />
+                        <Route path="projects" element={<ProjectsPage />} />
+                        <Route path="projects/:projectId" element={<ProjectDetailPage />} />
+                        <Route path="documents" element={<DocumentsPage />} />
+                        <Route path="documents/:documentId" element={<DocumentEditorPage />} />
+                        <Route path="files" element={<FilesPage />} />
+                        <Route path="chat" element={<ChatPage />} />
+                        <Route path="chat/:channelId" element={<ChatPage />} />
+                        <Route path="whiteboards" element={<WhiteboardsPage />} />
+                        <Route path="whiteboards/:whiteboardId" element={<WhiteboardEditorPage />} />
+                        <Route path="knowledge" element={<KnowledgePage />} />
+                        <Route path="knowledge/:articleId" element={<KnowledgeArticlePage />} />
+                        <Route path="crm" element={<CrmPage />} />
+                        <Route path="hr" element={<HrPage />} />
+                        <Route path="finance" element={<FinancePage />} />
+                        <Route path="notifications" element={<NotificationsPage />} />
+                        <Route path="search" element={<SearchPage />} />
+                        <Route path="settings" element={<SettingsLayout />}>
+                          <Route index element={<Navigate to="general" replace />} />
+                          <Route path="general" element={<GeneralSettingsPage />} />
+                          <Route path="members" element={<MembersSettingsPage />} />
+                          <Route path="security" element={<SecuritySettingsPage />} />
+                          <Route path="administration" element={<AdministrationPage />} />
+                        </Route>
                       </Route>
                     </Route>
                   </Route>

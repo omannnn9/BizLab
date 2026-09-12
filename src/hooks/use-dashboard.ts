@@ -156,7 +156,8 @@ export function useDashboardStats() {
     enabled: !!company,
     queryFn: async () => {
       const companyId = company!.id;
-      const [tasks, projects, files, activity, members, revenue] = await Promise.all([
+      const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
+      const [tasks, projects, files, activity, members, revenue, channels, recentMessages] = await Promise.all([
         supabase.from("tasks").select("id,status,priority,due_date,title,completed_at").eq("company_id", companyId),
         supabase.from("projects").select("id,name,status,color").eq("company_id", companyId).eq("is_archived", false),
         supabase.from("company_storage_usage").select("*").eq("company_id", companyId).maybeSingle(),
@@ -174,7 +175,24 @@ export function useDashboardStats() {
           .select("amount_cents, recognized_date")
           .eq("company_id", companyId)
           .order("recognized_date", { ascending: false }),
+        supabase.from("chat_channels").select("id,name").eq("company_id", companyId).eq("is_archived", false),
+        // is_channel_member() further narrows this to channels the
+        // viewer can actually see, same as the Chat page itself.
+        supabase
+          .from("chat_messages")
+          .select("channel_id, chat_channels!inner(company_id)")
+          .eq("chat_channels.company_id", companyId)
+          .is("deleted_at", null)
+          .gte("created_at", sevenDaysAgo),
       ]);
+
+      const messageCountByChannel = new Map<string, number>();
+      for (const m of recentMessages.data ?? []) {
+        messageCountByChannel.set(m.channel_id, (messageCountByChannel.get(m.channel_id) ?? 0) + 1);
+      }
+      const channelActivity = (channels.data ?? [])
+        .map((c) => ({ id: c.id, name: c.name ?? "Unnamed", messageCount: messageCountByChannel.get(c.id) ?? 0 }))
+        .sort((a, b) => b.messageCount - a.messageCount);
 
       return {
         tasks: tasks.data ?? [],
@@ -185,6 +203,7 @@ export function useDashboardStats() {
         myOpenTasks: (tasks.data ?? []).filter((t) => t.status !== "done" && t.status !== "cancelled").length,
         currentUserId: user?.id,
         revenue: revenue.data ?? [],
+        channelActivity,
       };
     },
   });

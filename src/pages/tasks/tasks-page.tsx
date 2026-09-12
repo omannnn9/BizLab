@@ -7,11 +7,12 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { KanbanBoard } from "@/components/tasks/kanban-board";
 import { TaskListView } from "@/components/tasks/task-list-view";
 import { TaskCalendarView } from "@/components/tasks/task-calendar-view";
+import { TaskTimelineView } from "@/components/tasks/task-timeline-view";
 import { TaskDialog } from "@/components/tasks/task-dialog";
 import { useTasks } from "@/hooks/use-tasks";
 import type { Task } from "@/types/database";
 
-type ViewMode = "list" | "kanban" | "calendar";
+type ViewMode = "list" | "kanban" | "calendar" | "timeline";
 
 export function TasksPage() {
   const { data: tasks, isLoading } = useTasks();
@@ -41,6 +42,7 @@ export function TasksPage() {
                 <TabsTrigger value="list">List</TabsTrigger>
                 <TabsTrigger value="kanban">Kanban</TabsTrigger>
                 <TabsTrigger value="calendar">Calendar</TabsTrigger>
+                <TabsTrigger value="timeline">Timeline</TabsTrigger>
               </TabsList>
             </Tabs>
             <Button onClick={openCreate}>
@@ -67,6 +69,11 @@ export function TasksPage() {
           {view === "calendar" && (
             <div className="h-full overflow-y-auto">
               <TaskCalendarView tasks={tasks ?? []} onTaskClick={openEdit} />
+            </div>
+          )}
+          {view === "timeline" && (
+            <div className="h-full overflow-y-auto">
+              <TaskTimelineView tasks={tasks ?? []} onTaskClick={openEdit} />
             </div>
           )}
         </div>

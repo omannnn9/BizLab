@@ -1,21 +1,24 @@
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { formatDistanceToNow } from "date-fns";
+import { Download, Loader2 } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { MfaSettings } from "@/components/settings/mfa-settings";
 import { useUpdateCompany } from "@/hooks/use-companies";
 import { useWorkspace } from "@/hooks/use-workspace";
 import { usePermissions } from "@/hooks/use-permissions";
-import { useAuditLogs } from "@/hooks/use-audit-logs";
+import { useAuditLogs, useExportComplianceReport } from "@/hooks/use-audit-logs";
 
 export function SecuritySettingsPage() {
   const { company } = useWorkspace();
   const { can } = usePermissions();
   const updateCompany = useUpdateCompany();
   const { data: auditLogs } = useAuditLogs();
+  const exportReport = useExportComplianceReport();
   const canManage = can("workspace_settings", "manage");
   const canViewAudit = can("audit_logs", "view");
 
@@ -33,10 +36,29 @@ export function SecuritySettingsPage() {
     }
   }
 
+  async function handleExport() {
+    try {
+      const count = await exportReport.mutateAsync();
+      toast.success(`Exported ${count} audit events`);
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Could not export the compliance report");
+    }
+  }
+
   if (!settings) return null;
 
   return (
     <div className="flex max-w-2xl flex-col gap-6">
+      <Card>
+        <CardHeader>
+          <CardTitle>Your account</CardTitle>
+          <CardDescription>Applies to your login only, across every workspace you belong to.</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <MfaSettings />
+        </CardContent>
+      </Card>
+
       <Card>
         <CardHeader>
           <CardTitle>Security policy</CardTitle>
@@ -48,7 +70,9 @@ export function SecuritySettingsPage() {
           <div className="flex items-center justify-between">
             <div>
               <Label>Require multi-factor authentication</Label>
-              <p className="text-xs text-muted-foreground">Members must enrol an MFA factor to sign in.</p>
+              <p className="text-xs text-muted-foreground">
+                Members without an authenticator app set up are asked to add one the next time they sign in.
+              </p>
             </div>
             <Switch
               checked={settings.require_mfa}
@@ -59,7 +83,10 @@ export function SecuritySettingsPage() {
           <div className="flex items-center justify-between">
             <div>
               <Label>Single sign-on (SSO)</Label>
-              <p className="text-xs text-muted-foreground">Enterprise plan — SAML/OIDC via your identity provider.</p>
+              <p className="text-xs text-muted-foreground">
+                Requires a SAML/OIDC identity provider (Okta, Azure AD, etc.) configured for this Supabase
+                project — this flag records intent but doesn't configure one on its own.
+              </p>
             </div>
             <Switch
               checked={settings.sso_enabled}
@@ -114,9 +141,12 @@ export function SecuritySettingsPage() {
         </Card>
       )}
 
-      <Button variant="outline" className="w-fit" disabled>
-        Export compliance report (coming soon)
-      </Button>
+      {canViewAudit && (
+        <Button variant="outline" className="w-fit" onClick={handleExport} disabled={exportReport.isPending}>
+          {exportReport.isPending ? <Loader2 className="animate-spin" /> : <Download />}
+          Export compliance report (CSV)
+        </Button>
+      )}
     </div>
   );
 }
