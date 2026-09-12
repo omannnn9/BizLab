@@ -9,20 +9,18 @@ import { ThemeProvider } from "@/providers/theme-provider";
 import { WorkspaceProvider } from "@/providers/workspace-provider";
 import { RequireAuth } from "@/routes/require-auth";
 import { WorkspaceLayout } from "@/components/layout/workspace-layout";
-import { LandingPage } from "@/pages/landing";
+import { HomePage } from "@/pages/home";
 import { LoginPage } from "@/pages/auth/login";
-import { SignupPage } from "@/pages/auth/signup";
 import { ForgotPasswordPage } from "@/pages/auth/forgot-password";
 import { ResetPasswordPage } from "@/pages/auth/reset-password";
 import { AcceptInvitePage } from "@/pages/auth/accept-invite";
 import { WorkspacePicker } from "@/pages/onboarding/workspace-picker";
-import { CreateWorkspacePage } from "@/pages/onboarding/create-workspace";
 
 // Route-level code splitting: everything behind the workspace shell is
 // lazy-loaded. These pages (rich editors, the kanban board, the
 // whiteboard canvas) accounted for most of the original 811 KB single
-// bundle; landing/auth/onboarding stay eager since they're the actual
-// first paint for a signed-out visitor and are small on their own.
+// bundle; auth/onboarding stay eager since they're the actual first
+// paint for a signed-out visitor and are small on their own.
 const DashboardPage = lazy(() => import("@/pages/dashboard/dashboard-page").then((m) => ({ default: m.DashboardPage })));
 const TasksPage = lazy(() => import("@/pages/tasks/tasks-page").then((m) => ({ default: m.TasksPage })));
 const ProjectsPage = lazy(() => import("@/pages/projects/projects-page").then((m) => ({ default: m.ProjectsPage })));
@@ -62,6 +60,9 @@ const BillingSettingsPage = lazy(() =>
 const SecuritySettingsPage = lazy(() =>
   import("@/pages/settings/security-settings-page").then((m) => ({ default: m.SecuritySettingsPage }))
 );
+const AdministrationPage = lazy(() =>
+  import("@/pages/settings/administration-page").then((m) => ({ default: m.AdministrationPage }))
+);
 const CrmPage = lazy(() => import("@/pages/crm/crm-page").then((m) => ({ default: m.CrmPage })));
 const HrPage = lazy(() => import("@/pages/hr/hr-page").then((m) => ({ default: m.HrPage })));
 const FinancePage = lazy(() => import("@/pages/finance/finance-page").then((m) => ({ default: m.FinancePage })));
@@ -83,16 +84,15 @@ export default function App() {
             <TooltipProvider delayDuration={200}>
               <Suspense fallback={<RouteFallback />}>
                 <Routes>
-                  <Route path="/" element={<LandingPage />} />
+                  <Route path="/" element={<HomePage />} />
                   <Route path="/login" element={<LoginPage />} />
-                  <Route path="/signup" element={<SignupPage />} />
+                  <Route path="/signup" element={<Navigate to="/login" replace />} />
                   <Route path="/forgot-password" element={<ForgotPasswordPage />} />
                   <Route path="/reset-password" element={<ResetPasswordPage />} />
                   <Route path="/accept-invite" element={<AcceptInvitePage />} />
 
                   <Route element={<RequireAuth />}>
                     <Route path="/workspaces" element={<WorkspacePicker />} />
-                    <Route path="/workspaces/new" element={<CreateWorkspacePage />} />
 
                     <Route
                       path="/w/:slug"
@@ -126,6 +126,7 @@ export default function App() {
                         <Route path="members" element={<MembersSettingsPage />} />
                         <Route path="billing" element={<BillingSettingsPage />} />
                         <Route path="security" element={<SecuritySettingsPage />} />
+                        <Route path="administration" element={<AdministrationPage />} />
                       </Route>
                     </Route>
                   </Route>

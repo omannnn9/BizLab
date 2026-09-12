@@ -2,6 +2,7 @@ import { NavLink } from "react-router-dom";
 import {
   BookOpen,
   Briefcase,
+  Building2,
   CheckSquare,
   DollarSign,
   FileText,
@@ -142,6 +143,13 @@ export function SidebarNav({ onNavigate }: { onNavigate?: () => void }) {
         >
           <Settings className="size-4" />
           Workspace settings
+        </NavLink>
+        <NavLink
+          to="/workspaces"
+          className="flex items-center gap-2.5 rounded-md px-2.5 py-1.5 text-sm font-medium text-sidebar-foreground/80 transition-colors hover:bg-accent hover:text-accent-foreground"
+        >
+          <Building2 className="size-4" />
+          Switch workspace
         </NavLink>
         <p className="mt-2 truncate px-2.5 text-xs text-muted-foreground">{company?.name}</p>
       </div>

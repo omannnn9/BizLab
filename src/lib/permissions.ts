@@ -56,7 +56,7 @@ export type Resource =
 export type Action = "view" | "create" | "edit" | "delete" | "manage";
 
 /** Minimum role required for each (resource, action) pair. */
-const PERMISSION_MATRIX: Record<Resource, Partial<Record<Action, CompanyRole>>> = {
+export const PERMISSION_MATRIX: Record<Resource, Partial<Record<Action, CompanyRole>>> = {
   workspace_settings: { view: "employee", edit: "admin", manage: "owner" },
   billing: { view: "admin", manage: "owner" },
   members: { view: "employee", create: "admin", edit: "admin", delete: "admin" },

@@ -1,8 +1,17 @@
 # BizLab
 
-The virtual operating system for modern businesses — tasks & projects,
-documents, file storage, team chat, whiteboards, dashboards and a company
-knowledge base, unified into one multi-tenant SaaS platform.
+The private internal workspace for OD Holdings and its companies — tasks
+& projects, documents, file storage, team chat, whiteboards, dashboards
+and a company knowledge base, unified into one multi-tenant platform.
+
+BizLab is **internal-only**: there is no public signup, no marketing
+site, and no self-service workspace creation. A platform administrator
+creates every company and invites every user (Settings → Administration,
+or per-company Settings → Members); everything else — cross-company
+RBAC, disabled-user lockout, the invitation lifecycle — is enforced
+server-side by PostgreSQL RLS, not just hidden in the UI. See
+`docs/DATABASE_SCHEMA.md` and `supabase/migrations/0022_internal_access_model.sql`
+for how.
 
 ## Documentation
 
@@ -44,12 +53,16 @@ publishable key, or provision your own per below.
    or the Supabase MCP tools if you're working in an environment that has
    them).
 2. Run the migrations in `supabase/migrations/` **in order** (0001 →
-   0021) — via `supabase db push`, the Supabase SQL editor, or
+   0022) — via `supabase db push`, the Supabase SQL editor, or
    `mcp__Supabase__apply_migration` one file at a time.
 3. Copy your project's URL and anon/publishable key into `.env.local`
    (see `.env.example`).
-4. `npm run dev`, sign up, and you'll land in the onboarding flow that
-   creates your first company workspace.
+4. There's no public signup — provision the first platform admin
+   directly in the database (insert an `auth.users` row, then set
+   `profiles.is_platform_admin = true` for it) and have them reset
+   their password via the app's "Forgot password" flow. From there
+   they create companies and invite everyone else from Settings →
+   Administration.
 
 ## Scripts
 
@@ -72,7 +85,8 @@ src/
 ├── lib/           # supabase client, permissions matrix, utils
 └── types/         # hand-written types mirroring supabase/migrations
 
-supabase/migrations/   # 0001-0021, the full database schema + RLS policies
+supabase/migrations/   # 0001-0022, the full database schema + RLS policies
+supabase/functions/    # invite-user — the only path that can provision a new account
 docs/                    # architecture, schema, permissions, security, roadmap
 ```
 

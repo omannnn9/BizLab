@@ -65,6 +65,8 @@ export interface Profile {
   email: string;
   phone: string | null;
   timezone: string;
+  is_platform_admin: boolean;
+  disabled_at: string | null;
   created_at: string;
   updated_at: string;
 }

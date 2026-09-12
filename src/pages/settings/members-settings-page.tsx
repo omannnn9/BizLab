@@ -21,26 +21,29 @@ import {
 } from "@/components/ui/select";
 import {
   useCompanyMembers,
-  useInviteMember,
   usePendingInvitations,
   useRemoveMember,
   useUpdateMemberRole,
 } from "@/hooks/use-members";
+import { useInviteUser } from "@/hooks/use-admin";
 import { usePermissions } from "@/hooks/use-permissions";
+import { useWorkspace } from "@/hooks/use-workspace";
 import { ROLE_LABELS } from "@/lib/permissions";
 import type { CompanyRole } from "@/types/database";
 
 const ROLES: CompanyRole[] = ["owner", "admin", "manager", "employee", "guest"];
 
 export function MembersSettingsPage() {
+  const { company } = useWorkspace();
   const { data: members } = useCompanyMembers();
   const { data: invitations } = usePendingInvitations();
   const updateRole = useUpdateMemberRole();
   const removeMember = useRemoveMember();
-  const inviteMember = useInviteMember();
+  const inviteUser = useInviteUser();
   const { can, hasMinRole } = usePermissions();
 
   const [inviteOpen, setInviteOpen] = useState(false);
+  const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [role, setRole] = useState<CompanyRole>("employee");
 
@@ -48,9 +51,13 @@ export function MembersSettingsPage() {
 
   async function handleInvite(e: React.FormEvent) {
     e.preventDefault();
+    if (!company) return;
     try {
-      await inviteMember.mutateAsync({ email, role });
-      toast.success(`Invitation sent to ${email}`);
+      const result = await inviteUser.mutateAsync({ email, full_name: name, company_id: company.id, role });
+      toast.success(
+        result.accountCreated ? `Invitation sent to ${email}` : `${email} already has a BizLab account — added to pending invitations`
+      );
+      setName("");
       setEmail("");
       setInviteOpen(false);
     } catch (err) {
@@ -107,8 +114,8 @@ export function MembersSettingsPage() {
         <div>
           <h3 className="mb-2 text-sm font-semibold">Pending invitations</h3>
           <p className="mb-2 text-xs text-muted-foreground">
-            Email delivery isn't connected yet (see docs/ROADMAP.md) — copy the link and send it
-            directly for now.
+            New teammates get an email automatically. If someone already has a BizLab account for
+            another company, share this link with them directly instead.
           </p>
           <div className="overflow-hidden rounded-lg border">
             {invitations.map((inv) => (
@@ -140,6 +147,12 @@ export function MembersSettingsPage() {
           </DialogHeader>
           <form onSubmit={handleInvite} className="flex flex-col gap-4">
             <Input
+              required
+              placeholder="Full name"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+            />
+            <Input
               type="email"
               required
               placeholder="teammate@company.com"
@@ -155,7 +168,7 @@ export function MembersSettingsPage() {
               </SelectContent>
             </Select>
             <DialogFooter>
-              <Button type="submit" disabled={inviteMember.isPending}>Send invitation</Button>
+              <Button type="submit" disabled={inviteUser.isPending}>Send invitation</Button>
             </DialogFooter>
           </form>
         </DialogContent>

@@ -1,6 +1,7 @@
 import { NavLink, Outlet } from "react-router-dom";
 import { PageHeader } from "@/components/shared/page-header";
 import { cn } from "@/lib/utils";
+import { useAuth } from "@/hooks/use-auth";
 
 const TABS = [
   { to: "general", label: "General" },
@@ -10,12 +11,15 @@ const TABS = [
 ];
 
 export function SettingsLayout() {
+  const { profile } = useAuth();
+  const tabs = profile?.is_platform_admin ? [...TABS, { to: "administration", label: "Administration" }] : TABS;
+
   return (
     <div className="flex h-full flex-col">
       <PageHeader title="Workspace settings" description="Manage your company, team and subscription." />
       <div className="border-b px-6">
         <nav className="flex gap-1">
-          {TABS.map((tab) => (
+          {tabs.map((tab) => (
             <NavLink
               key={tab.to}
               to={tab.to}

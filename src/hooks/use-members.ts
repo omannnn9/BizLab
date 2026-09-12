@@ -1,6 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
-import { useAuth } from "@/hooks/use-auth";
 import { useWorkspace } from "@/hooks/use-workspace";
 import type { CompanyInvitation, CompanyMember, CompanyRole } from "@/types/database";
 
@@ -38,22 +37,6 @@ export function usePendingInvitations() {
       if (error) throw error;
       return (data ?? []) as CompanyInvitation[];
     },
-  });
-}
-
-export function useInviteMember() {
-  const { company } = useWorkspace();
-  const { user } = useAuth();
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: async ({ email, role }: { email: string; role: CompanyRole }) => {
-      const { error } = await supabase
-        .from("company_invitations")
-        .insert({ company_id: company!.id, email, role, invited_by: user!.id });
-      if (error) throw error;
-    },
-    onSuccess: () => void queryClient.invalidateQueries({ queryKey: ["invitations", company?.id] }),
   });
 }
 
