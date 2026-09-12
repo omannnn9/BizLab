@@ -21,7 +21,9 @@
   --color-destructive: var(--destructive);
   --color-destructive-foreground: var(--destructive-foreground);
   --color-success: var(--success);
+  --color-success-foreground: var(--success-foreground);
   --color-warning: var(--warning);
+  --color-warning-foreground: var(--warning-foreground);
   --color-border: var(--border);
   --color-input: var(--input);
   --color-ring: var(--ring);
@@ -33,61 +35,112 @@
   --radius-lg: var(--radius);
   --radius-xl: calc(var(--radius) + 4px);
   --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+  --text-3xl: 1.75rem; /* 28px display size, was Tailwind's default 30px */
+
+  /* Elevation scale — BizLab's design system previously had none; every
+     panel relied on a border alone. Redefining Tailwind's own shadow-*
+     keys means every existing `shadow-md` etc. class picks this up. */
+  --shadow-xs: 0 1px 2px 0 var(--shadow-color, oklch(0.16 0.03 260 / 4%));
+  --shadow-sm: 0 1px 3px 0 var(--shadow-color, oklch(0.16 0.03 260 / 6%));
+  --shadow-md: 0 4px 10px -2px var(--shadow-color, oklch(0.16 0.03 260 / 8%));
+  --shadow-lg: 0 10px 24px -4px var(--shadow-color, oklch(0.16 0.03 260 / 10%));
+  --shadow-xl: 0 20px 48px -8px var(--shadow-color, oklch(0.16 0.03 260 / 14%));
 }
 
 :root {
   --radius: 0.625rem;
+
+  /* ---------------------------------------------------------------
+   * Primitives — indigo/gray/red/green/amber ramps, fixed chroma+hue
+   * per family. Matches the ramp built in the BizLab Figma design
+   * system 1:1 (same lightness steps), so the two stay in sync.
+   * --------------------------------------------------------------- */
+  --indigo-50: oklch(0.97 0.19 265);
+  --indigo-100: oklch(0.93 0.19 265);
+  --indigo-200: oklch(0.85 0.19 265);
+  --indigo-300: oklch(0.75 0.19 265);
+  --indigo-400: oklch(0.62 0.19 265);
+  --indigo-500: oklch(0.47 0.19 265);
+  --indigo-600: oklch(0.4 0.19 265);
+  --indigo-700: oklch(0.34 0.19 265);
+  --indigo-800: oklch(0.28 0.19 265);
+  --indigo-900: oklch(0.22 0.19 265);
+
+  --gray-50: oklch(0.99 0.008 260);
+  --gray-100: oklch(0.96 0.008 260);
+  --gray-200: oklch(0.91 0.008 260);
+  --gray-300: oklch(0.83 0.008 260);
+  --gray-400: oklch(0.65 0.008 260);
+  --gray-500: oklch(0.5 0.008 260);
+  --gray-600: oklch(0.4 0.008 260);
+  --gray-700: oklch(0.3 0.008 260);
+  --gray-800: oklch(0.22 0.008 260);
+  --gray-900: oklch(0.16 0.008 260);
+
+  --red-500: oklch(0.58 0.22 27);
+  --red-900: oklch(0.32 0.22 27);
+  --green-500: oklch(0.6 0.15 150);
+  --amber-500: oklch(0.75 0.16 80);
+  --amber-900: oklch(0.35 0.16 80);
+
+  /* Semantic tokens — same names/roles as before, now sourced from the
+     shared primitive ramp instead of one-off values. */
   --background: oklch(1 0 0);
-  --foreground: oklch(0.18 0.01 260);
+  --foreground: var(--gray-900);
   --card: oklch(1 0 0);
-  --card-foreground: oklch(0.18 0.01 260);
+  --card-foreground: var(--gray-900);
   --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.18 0.01 260);
-  --primary: oklch(0.47 0.19 265);
+  --popover-foreground: var(--gray-900);
+  --primary: var(--indigo-500);
   --primary-foreground: oklch(0.98 0.005 260);
-  --secondary: oklch(0.96 0.005 260);
-  --secondary-foreground: oklch(0.25 0.01 260);
-  --muted: oklch(0.96 0.005 260);
-  --muted-foreground: oklch(0.5 0.02 260);
-  --accent: oklch(0.94 0.02 265);
-  --accent-foreground: oklch(0.25 0.06 265);
-  --destructive: oklch(0.58 0.22 27);
+  --secondary: var(--gray-100);
+  --secondary-foreground: var(--gray-800);
+  --muted: var(--gray-100);
+  --muted-foreground: var(--gray-500);
+  --accent: var(--indigo-50);
+  --accent-foreground: var(--indigo-800);
+  --destructive: var(--red-500);
   --destructive-foreground: oklch(0.98 0.005 260);
-  --success: oklch(0.6 0.15 150);
-  --warning: oklch(0.75 0.16 80);
-  --border: oklch(0.91 0.005 260);
-  --input: oklch(0.91 0.005 260);
+  --success: var(--green-500);
+  --success-foreground: oklch(0.98 0.005 260);
+  --warning: var(--amber-500);
+  --warning-foreground: var(--amber-900);
+  --border: var(--gray-200);
+  --input: var(--gray-200);
   --ring: oklch(0.47 0.19 265 / 0.5);
-  --sidebar: oklch(0.99 0.002 260);
-  --sidebar-foreground: oklch(0.25 0.01 260);
-  --sidebar-border: oklch(0.92 0.005 260);
+  --sidebar: var(--gray-50);
+  --sidebar-foreground: var(--gray-800);
+  --sidebar-border: var(--gray-200);
 }
 
 .dark {
-  --background: oklch(0.16 0.01 260);
-  --foreground: oklch(0.96 0.005 260);
-  --card: oklch(0.19 0.01 260);
-  --card-foreground: oklch(0.96 0.005 260);
-  --popover: oklch(0.19 0.01 260);
-  --popover-foreground: oklch(0.96 0.005 260);
-  --primary: oklch(0.68 0.16 265);
-  --primary-foreground: oklch(0.16 0.01 260);
-  --secondary: oklch(0.25 0.01 260);
-  --secondary-foreground: oklch(0.96 0.005 260);
-  --muted: oklch(0.25 0.01 260);
-  --muted-foreground: oklch(0.65 0.02 260);
-  --accent: oklch(0.28 0.04 265);
-  --accent-foreground: oklch(0.9 0.02 265);
-  --destructive: oklch(0.65 0.2 25);
+  --background: var(--gray-900);
+  --foreground: var(--gray-50);
+  --card: var(--gray-800);
+  --card-foreground: var(--gray-50);
+  --popover: var(--gray-800);
+  --popover-foreground: var(--gray-50);
+  --primary: var(--indigo-400);
+  --primary-foreground: var(--gray-900);
+  --secondary: var(--gray-700);
+  --secondary-foreground: var(--gray-50);
+  --muted: var(--gray-700);
+  --muted-foreground: oklch(0.7 0.008 260);
+  --accent: var(--indigo-800);
+  --accent-foreground: var(--indigo-100);
+  --destructive: var(--red-500);
   --destructive-foreground: oklch(0.98 0.005 260);
-  --success: oklch(0.65 0.15 150);
-  --warning: oklch(0.78 0.15 80);
-  --border: oklch(0.28 0.01 260 / 0.6);
-  --input: oklch(0.28 0.01 260 / 0.6);
-  --ring: oklch(0.68 0.16 265 / 0.5);
-  --sidebar: oklch(0.14 0.01 260);
-  --sidebar-foreground: oklch(0.9 0.005 260);
-  --sidebar-border: oklch(0.24 0.01 260);
+  --success: var(--green-500);
+  --success-foreground: oklch(0.98 0.005 260);
+  --warning: var(--amber-500);
+  --warning-foreground: var(--amber-900);
+  --border: oklch(0.3 0.008 260 / 0.6);
+  --input: oklch(0.3 0.008 260 / 0.6);
+  --ring: oklch(0.62 0.19 265 / 0.5);
+  --sidebar: var(--gray-900);
+  --sidebar-foreground: var(--gray-100);
+  --sidebar-border: var(--gray-800);
+  --shadow-color: oklch(0 0 0 / 24%);
 }
 
 @layer base {
