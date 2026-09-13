@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import { Plus } from "lucide-react";
 import { PageHeader } from "@/components/shared/page-header";
 import { Button } from "@/components/ui/button";
@@ -19,6 +20,7 @@ export function TasksPage() {
   const [view, setView] = useState<ViewMode>("kanban");
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingTask, setEditingTask] = useState<Task | undefined>();
+  const [searchParams, setSearchParams] = useSearchParams();
 
   function openCreate() {
     setEditingTask(undefined);
@@ -29,6 +31,24 @@ export function TasksPage() {
     setEditingTask(task);
     setDialogOpen(true);
   }
+
+  // Deep-link support for notifications (task_assigned, task_due_soon,
+  // comment_added) that link to /tasks?task={id} — without this the
+  // link landed you on the generic list with no indication of which
+  // task it meant, so delegating a task notified you but didn't
+  // actually take you to it.
+  useEffect(() => {
+    const taskId = searchParams.get("task");
+    if (!taskId || !tasks) return;
+    const target = tasks.find((t) => t.id === taskId);
+    if (target) openEdit(target);
+    setSearchParams((prev) => {
+      const next = new URLSearchParams(prev);
+      next.delete("task");
+      return next;
+    }, { replace: true });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [tasks, searchParams]);
 
   return (
     <div className="flex h-full flex-col">

@@ -21,7 +21,7 @@ import {
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { STATUS_LABELS } from "@/components/tasks/task-badges";
 import { TaskComments } from "@/components/tasks/task-comments";
-import { useCreateTask, useDeleteTask, useUpdateTask } from "@/hooks/use-tasks";
+import { useCreateTask, useDeleteTask, useSetTaskAssignees, useUpdateTask } from "@/hooks/use-tasks";
 import { useProjects } from "@/hooks/use-projects";
 import { useCompanyMembers } from "@/hooks/use-members";
 import type { Task, TaskPriority, TaskStatus } from "@/types/database";
@@ -49,6 +49,7 @@ export function TaskDialog({
   const createTask = useCreateTask();
   const updateTask = useUpdateTask();
   const deleteTask = useDeleteTask();
+  const setAssignees = useSetTaskAssignees();
 
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
@@ -70,7 +71,7 @@ export function TaskDialog({
     }
   }, [open, task, defaultProjectId, defaultStatus]);
 
-  const saving = createTask.isPending || updateTask.isPending;
+  const saving = createTask.isPending || updateTask.isPending || setAssignees.isPending;
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -88,6 +89,16 @@ export function TaskDialog({
     try {
       if (task) {
         await updateTask.mutateAsync({ id: task.id, ...payload });
+        const original = new Set(task.assignees?.map((a) => a.id) ?? []);
+        const changed = original.size !== assigneeIds.length || assigneeIds.some((id) => !original.has(id));
+        // Only touch task_assignees when the set actually changed — the
+        // mutation deletes-then-reinserts every id, and a re-insert of
+        // someone already assigned re-fires the "you were assigned"
+        // notification trigger, which would otherwise re-notify the
+        // whole list on every unrelated edit (title, status, due date…).
+        if (changed) {
+          await setAssignees.mutateAsync({ taskId: task.id, memberIds: assigneeIds });
+        }
       } else {
         await createTask.mutateAsync({ ...payload, assigneeMemberIds: assigneeIds });
       }

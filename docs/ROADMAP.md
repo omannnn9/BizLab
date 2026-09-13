@@ -15,8 +15,14 @@ model (no public signup, admin-provisioned accounts and companies only).
   invite email (Edge Function `invite-user`); disabled users lose all
   data access immediately via RLS, not just a UI hide.
 - **Tasks & Projects**: full CRUD, List/Kanban/Calendar/**Timeline
-  (Gantt)** views, drag-and-drop status changes, assignees, priorities,
-  due dates, comments, milestones, project progress tracking.
+  (Gantt)** views, drag-and-drop status changes, delegation (assignees),
+  priorities, due dates, comments, milestones, project progress
+  tracking. Delegating a task notifies the assignee, and every assignee
+  gets a one-time deadline reminder as the due date approaches (hourly
+  `pg_cron` job — the notification type existed in schema from the
+  start but nothing ever fired it). Fixed a real bug where *editing* an
+  existing task silently dropped any assignee changes on save — only
+  task creation actually persisted assignees before.
 - **Dashboards**: configurable widgets backed by real queries — task
   completion, deadlines, storage, activity, channel activity, and
   **quick links** (pin buttons to outside tools/docs, editable inline).
