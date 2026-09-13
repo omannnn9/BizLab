@@ -30,7 +30,7 @@ const AVAILABLE_WIDGETS: { type: WidgetType; label: string }[] = [
   { type: "recent_activity", label: "Recent activity" },
   { type: "projects_overview", label: "Projects overview" },
   { type: "team_productivity", label: "Team productivity" },
-  { type: "revenue_metrics", label: "Revenue metrics" },
+  { type: "channel_activity", label: "Channel activity" },
 ];
 
 export function DashboardPage() {

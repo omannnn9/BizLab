@@ -47,9 +47,6 @@ export type Resource =
   | "whiteboards"
   | "dashboards"
   | "knowledge_hub"
-  | "crm"
-  | "hr"
-  | "finance"
   | "audit_logs";
 
 export type Action = "view" | "create" | "edit" | "delete" | "manage";
@@ -66,9 +63,6 @@ export const PERMISSION_MATRIX: Record<Resource, Partial<Record<Action, CompanyR
   whiteboards: { view: "employee", create: "employee", delete: "manager" },
   dashboards: { view: "employee", create: "employee", manage: "manager" },
   knowledge_hub: { view: "employee", create: "manager", edit: "manager", delete: "admin" },
-  crm: { view: "employee", create: "employee", edit: "employee", delete: "manager" },
-  hr: { view: "employee", create: "manager", edit: "manager", delete: "admin" },
-  finance: { view: "manager", create: "manager", edit: "manager", delete: "admin" },
   audit_logs: { view: "admin" },
 };
 

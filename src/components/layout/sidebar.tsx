@@ -1,10 +1,8 @@
 import { NavLink } from "react-router-dom";
 import {
   BookOpen,
-  Briefcase,
   Building2,
   CheckSquare,
-  DollarSign,
   FileText,
   FolderOpen,
   LayoutDashboard,
@@ -12,11 +10,9 @@ import {
   PenTool,
   Settings,
   FolderKanban,
-  Users,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useWorkspace } from "@/hooks/use-workspace";
-import { usePermissions } from "@/hooks/use-permissions";
 
 const NAV_ITEMS: { to: string; label: string; icon: typeof LayoutDashboard; end?: boolean }[] = [
   { to: "", label: "Dashboard", icon: LayoutDashboard, end: true },
@@ -28,12 +24,6 @@ const NAV_ITEMS: { to: string; label: string; icon: typeof LayoutDashboard; end?
   { to: "whiteboards", label: "Whiteboards", icon: PenTool },
   { to: "knowledge", label: "Knowledge Hub", icon: BookOpen },
 ];
-
-const BUSINESS_NAV_ITEMS = [
-  { to: "crm", label: "CRM", icon: Briefcase, resource: "crm" },
-  { to: "hr", label: "HR", icon: Users, resource: "hr" },
-  { to: "finance", label: "Finance", icon: DollarSign, resource: "finance" },
-] as const;
 
 function NavItem({
   to,
@@ -67,9 +57,6 @@ function NavItem({
 
 export function SidebarNav({ onNavigate }: { onNavigate?: () => void }) {
   const { company } = useWorkspace();
-  const { can } = usePermissions();
-
-  const visibleBusinessItems = BUSINESS_NAV_ITEMS.filter((item) => can(item.resource, "view"));
 
   return (
     <div className="flex h-full flex-col" onClick={onNavigate}>
@@ -77,15 +64,6 @@ export function SidebarNav({ onNavigate }: { onNavigate?: () => void }) {
         {NAV_ITEMS.map((item) => (
           <NavItem key={item.label} to={item.to} label={item.label} icon={item.icon} end={item.end} />
         ))}
-
-        {visibleBusinessItems.length > 0 && (
-          <>
-            <p className="mt-4 mb-1 px-2.5 text-xs font-medium text-muted-foreground">Business</p>
-            {visibleBusinessItems.map((item) => (
-              <NavItem key={item.label} to={item.to} label={item.label} icon={item.icon} />
-            ))}
-          </>
-        )}
       </nav>
       <div className="border-t border-sidebar-border p-3">
         <NavLink

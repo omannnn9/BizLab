@@ -61,9 +61,6 @@ const SecuritySettingsPage = lazy(() =>
 const AdministrationPage = lazy(() =>
   import("@/pages/settings/administration-page").then((m) => ({ default: m.AdministrationPage }))
 );
-const CrmPage = lazy(() => import("@/pages/crm/crm-page").then((m) => ({ default: m.CrmPage })));
-const HrPage = lazy(() => import("@/pages/hr/hr-page").then((m) => ({ default: m.HrPage })));
-const FinancePage = lazy(() => import("@/pages/finance/finance-page").then((m) => ({ default: m.FinancePage })));
 
 function RouteFallback() {
   return (
@@ -114,9 +111,6 @@ export default function App() {
                         <Route path="whiteboards/:whiteboardId" element={<WhiteboardEditorPage />} />
                         <Route path="knowledge" element={<KnowledgePage />} />
                         <Route path="knowledge/:articleId" element={<KnowledgeArticlePage />} />
-                        <Route path="crm" element={<CrmPage />} />
-                        <Route path="hr" element={<HrPage />} />
-                        <Route path="finance" element={<FinancePage />} />
                         <Route path="notifications" element={<NotificationsPage />} />
                         <Route path="search" element={<SearchPage />} />
                         <Route path="settings" element={<SettingsLayout />}>

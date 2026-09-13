@@ -157,7 +157,7 @@ export function useDashboardStats() {
     queryFn: async () => {
       const companyId = company!.id;
       const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
-      const [tasks, projects, files, activity, members, revenue, channels, recentMessages] = await Promise.all([
+      const [tasks, projects, files, activity, members, channels, recentMessages] = await Promise.all([
         supabase.from("tasks").select("id,status,priority,due_date,title,completed_at").eq("company_id", companyId),
         supabase.from("projects").select("id,name,status,color").eq("company_id", companyId).eq("is_archived", false),
         supabase.from("company_storage_usage").select("*").eq("company_id", companyId).maybeSingle(),
@@ -168,13 +168,6 @@ export function useDashboardStats() {
           .order("created_at", { ascending: false })
           .limit(8),
         supabase.from("company_members").select("id").eq("company_id", companyId).eq("status", "active"),
-        // RLS-gated to manager+ (finance_revenue_entries); comes back
-        // empty rather than erroring for anyone below that role.
-        supabase
-          .from("finance_revenue_entries")
-          .select("amount_cents, recognized_date")
-          .eq("company_id", companyId)
-          .order("recognized_date", { ascending: false }),
         supabase.from("chat_channels").select("id,name").eq("company_id", companyId).eq("is_archived", false),
         // is_channel_member() further narrows this to channels the
         // viewer can actually see, same as the Chat page itself.
@@ -202,7 +195,6 @@ export function useDashboardStats() {
         memberCount: members.data?.length ?? 0,
         myOpenTasks: (tasks.data ?? []).filter((t) => t.status !== "done" && t.status !== "cancelled").length,
         currentUserId: user?.id,
-        revenue: revenue.data ?? [],
         channelActivity,
       };
     },
