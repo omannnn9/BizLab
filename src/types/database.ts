@@ -31,7 +31,8 @@ export type WidgetType =
   | "recent_activity"
   | "projects_overview"
   | "my_tasks"
-  | "channel_activity";
+  | "channel_activity"
+  | "quick_links";
 
 export type KnowledgeCategory =
   | "sop"

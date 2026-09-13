@@ -28,6 +28,45 @@ export function useFiles(folderId: string | null) {
   });
 }
 
+export function useFile(fileId: string | undefined) {
+  return useQuery({
+    queryKey: ["file", fileId],
+    enabled: !!fileId,
+    queryFn: async () => {
+      const { data, error } = await supabase.from("files").select("*").eq("id", fileId!).single();
+      if (error) throw error;
+      return data as FileObject;
+    },
+  });
+}
+
+/** Overwrites a file's content in place (same storage path) — the save
+ * path for in-app editing of an uploaded Word/Excel file. Requires the
+ * "uploader or managers update company-files objects" storage policy
+ * (0025_file_content_editing.sql); the bucket only allowed insert before. */
+export function useReplaceFileContent() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ file, blob }: { file: FileObject; blob: Blob }) => {
+      const { error: uploadError } = await supabase.storage
+        .from(BUCKET)
+        .update(file.storage_path, blob, { upsert: true, contentType: blob.type || file.mime_type || undefined });
+      if (uploadError) throw uploadError;
+
+      const { error } = await supabase
+        .from("files")
+        .update({ file_size: blob.size, version: file.version + 1 })
+        .eq("id", file.id);
+      if (error) throw error;
+    },
+    onSuccess: (_d, variables) => {
+      void queryClient.invalidateQueries({ queryKey: ["file", variables.file.id] });
+      void queryClient.invalidateQueries({ queryKey: ["files"] });
+    },
+  });
+}
+
 export function useUploadFile(folderId: string | null) {
   const { company } = useWorkspace();
   const { user } = useAuth();
@@ -95,8 +134,8 @@ export function useDeleteFile() {
   });
 }
 
-export async function getFileDownloadUrl(storagePath: string) {
-  const { data, error } = await supabase.storage.from(BUCKET).createSignedUrl(storagePath, 60);
+export async function getFileDownloadUrl(storagePath: string, expiresInSeconds = 60) {
+  const { data, error } = await supabase.storage.from(BUCKET).createSignedUrl(storagePath, expiresInSeconds);
   if (error) throw error;
   return data.signedUrl;
 }

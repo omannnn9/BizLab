@@ -17,21 +17,34 @@ model (no public signup, admin-provisioned accounts and companies only).
 - **Tasks & Projects**: full CRUD, List/Kanban/Calendar/**Timeline
   (Gantt)** views, drag-and-drop status changes, assignees, priorities,
   due dates, comments, milestones, project progress tracking.
-- **Dashboards**: configurable widgets backed by real queries, including
-  channel activity — every widget type renders real data now, none
-  fall through to a placeholder.
+- **Dashboards**: configurable widgets backed by real queries — task
+  completion, deadlines, storage, activity, channel activity, and
+  **quick links** (pin buttons to outside tools/docs, editable inline).
+  Every widget type renders real data, none fall through to a
+  placeholder, and the "Add widget" picker offers exactly the set that
+  actually renders.
 - **Documents**: folder tree, a real Tiptap rich-text editor (bold/
   italic/underline/strike, headings, bullet/numbered/task lists,
   blockquotes, code blocks, links), autosave + version history/restore,
   per-document sharing UI (view/comment/edit/full_control), comments.
 - **File Storage**: drag-and-drop upload with a friendly pre-upload
   quota check (not just a raw DB-trigger error after the fact), folders,
-  signed-URL downloads.
+  signed-URL downloads, and **in-app live editing**: open an uploaded
+  .docx and edit it in the same rich-text editor Documents uses (import
+  via mammoth, save back to a real .docx via the `docx` library), open
+  an uploaded .xlsx as an editable cell grid (SheetJS) and save back to
+  real .xlsx, or view a PDF/image inline. Any company member can edit a
+  shared file now, not just its uploader (`0026_files_collab_edit.sql`
+  fixed a real gap where the RLS policy was stricter than the app's own
+  documented permission model). PDF content itself isn't editable —
+  true PDF editing is out of scope — just viewable in-app.
 - **Team Chat**: channels, realtime messages, reactions, typing/presence
   indicators, file attachments, **threaded replies**, auto-seeded
   default channels.
-- **Whiteboards**: infinite pan/zoom canvas, sticky notes, shapes,
-  autosave.
+- **Whiteboards**: infinite pan/zoom canvas, sticky notes, shapes, a
+  dedicated text tool, select + delete, real loading/error states
+  (opening a board that fails to load used to render nothing at all
+  and looked exactly like a permanently blank canvas).
 - **Knowledge Hub**: categorized articles (SOP/policy/process/training/
   onboarding), the same Tiptap rich-text editor as Documents,
   draft/publish workflow.

@@ -2,6 +2,7 @@ import { formatDistanceToNow } from "date-fns";
 import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
 import { WidgetCard } from "@/components/dashboard/widget-card";
+import { QuickLinksWidget } from "@/components/dashboard/quick-links-widget";
 import { formatBytes } from "@/lib/utils";
 import { useDashboardStats } from "@/hooks/use-dashboard";
 import { useWorkspace } from "@/hooks/use-workspace";
@@ -16,13 +17,30 @@ const WIDGET_TITLES: Record<DashboardWidget["widget_type"], string> = {
   projects_overview: "Projects overview",
   my_tasks: "My tasks",
   channel_activity: "Channel activity",
+  quick_links: "Quick links",
 };
 
-export function WidgetRenderer({ widget, onRemove }: { widget: DashboardWidget; onRemove?: () => void }) {
+export function WidgetRenderer({
+  widget,
+  dashboardId,
+  onRemove,
+}: {
+  widget: DashboardWidget;
+  dashboardId?: string;
+  onRemove?: () => void;
+}) {
   const { data: stats, isLoading } = useDashboardStats();
   const { company } = useWorkspace();
 
   const title = widget.title || WIDGET_TITLES[widget.widget_type];
+
+  if (widget.widget_type === "quick_links") {
+    return (
+      <WidgetCard title={title} onRemove={onRemove}>
+        <QuickLinksWidget widget={widget} dashboardId={dashboardId} />
+      </WidgetCard>
+    );
+  }
 
   if (isLoading || !stats) {
     return (

@@ -12,6 +12,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { RichTextEditor } from "@/components/documents/rich-text-editor";
+import { EntityLoadGuard } from "@/components/shared/entity-load-guard";
 import { normalizeRichContent } from "@/lib/tiptap-content";
 import { useKnowledgeArticle, useUpdateKnowledgeArticle } from "@/hooks/use-knowledge";
 import { useWorkspace } from "@/hooks/use-workspace";
@@ -21,7 +22,7 @@ const CATEGORIES: KnowledgeCategory[] = ["sop", "policy", "process", "training",
 
 export function KnowledgeArticlePage() {
   const { articleId } = useParams<{ articleId: string }>();
-  const { data: article, isLoading } = useKnowledgeArticle(articleId);
+  const { data: article, isLoading, isError } = useKnowledgeArticle(articleId);
   const updateArticle = useUpdateKnowledgeArticle();
   const { company } = useWorkspace();
   const navigate = useNavigate();
@@ -56,7 +57,17 @@ export function KnowledgeArticlePage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [title, content, category, isPublished]);
 
-  if (isLoading || !article) return null;
+  if (isLoading || isError || !article) {
+    return (
+      <EntityLoadGuard
+        isLoading={isLoading}
+        isError={isError}
+        backTo={`/w/${company?.slug}/knowledge`}
+        backLabel="Back to Knowledge Hub"
+        notFoundMessage="This article doesn't exist or you don't have access to it."
+      />
+    );
+  }
 
   return (
     <div className="flex h-full flex-col overflow-y-auto">

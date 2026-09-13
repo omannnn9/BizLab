@@ -1,7 +1,8 @@
 import { useEffect, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { ArrowLeft, Circle, Minus, Plus, Square, StickyNote } from "lucide-react";
+import { ArrowLeft, Circle, Minus, Plus, Square, StickyNote, Trash2, Type } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { EntityLoadGuard } from "@/components/shared/entity-load-guard";
 import { useSaveWhiteboard, useWhiteboard } from "@/hooks/use-whiteboards";
 import { useWorkspace } from "@/hooks/use-workspace";
 import { cn } from "@/lib/utils";
@@ -21,12 +22,13 @@ const STICKY_COLORS = ["#fef08a", "#bbf7d0", "#bfdbfe", "#fecaca", "#e9d5ff"];
 
 export function WhiteboardEditorPage() {
   const { whiteboardId } = useParams<{ whiteboardId: string }>();
-  const { data: whiteboard, isLoading } = useWhiteboard(whiteboardId);
+  const { data: whiteboard, isLoading, isError } = useWhiteboard(whiteboardId);
   const saveWhiteboard = useSaveWhiteboard();
   const { company } = useWorkspace();
   const navigate = useNavigate();
 
   const [elements, setElements] = useState<CanvasElement[]>([]);
+  const [selectedId, setSelectedId] = useState<string | null>(null);
   const [zoom, setZoom] = useState(1);
   const [pan, setPan] = useState({ x: 0, y: 0 });
   const panning = useRef<{ startX: number; startY: number; origin: { x: number; y: number } } | null>(null);
@@ -53,22 +55,44 @@ export function WhiteboardEditorPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [elements]);
 
+  useEffect(() => {
+    function onKeyDown(e: KeyboardEvent) {
+      if (!selectedId) return;
+      const target = e.target as HTMLElement;
+      if (target.tagName === "TEXTAREA" || target.tagName === "INPUT") return;
+      if (e.key === "Delete" || e.key === "Backspace") {
+        e.preventDefault();
+        setElements((prev) => prev.filter((el) => el.id !== selectedId));
+        setSelectedId(null);
+      }
+    }
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [selectedId]);
+
   function addElement(type: CanvasElement["type"]) {
     const el: CanvasElement = {
       id: crypto.randomUUID(),
       type,
       x: (200 - pan.x) / zoom,
       y: (150 - pan.y) / zoom,
-      width: type === "sticky" ? 180 : 140,
-      height: type === "sticky" ? 140 : 100,
+      width: type === "sticky" ? 180 : type === "text" ? 160 : 140,
+      height: type === "sticky" ? 140 : type === "text" ? 40 : 100,
       color: type === "sticky" ? STICKY_COLORS[elements.length % STICKY_COLORS.length] : "#6366f1",
       text: "",
     };
     setElements((prev) => [...prev, el]);
+    setSelectedId(el.id);
+  }
+
+  function removeElement(id: string) {
+    setElements((prev) => prev.filter((el) => el.id !== id));
+    setSelectedId((cur) => (cur === id ? null : cur));
   }
 
   function handleCanvasPointerDown(e: React.PointerEvent) {
     if (e.target !== e.currentTarget) return;
+    setSelectedId(null);
     panning.current = { startX: e.clientX, startY: e.clientY, origin: pan };
   }
 
@@ -92,7 +116,17 @@ export function WhiteboardEditorPage() {
     dragging.current = null;
   }
 
-  if (isLoading || !whiteboard) return null;
+  if (isLoading || isError || !whiteboard) {
+    return (
+      <EntityLoadGuard
+        isLoading={isLoading}
+        isError={isError}
+        backTo={`/w/${company?.slug}/whiteboards`}
+        backLabel="Back to boards"
+        notFoundMessage="This whiteboard doesn't exist or you don't have access to it."
+      />
+    );
+  }
 
   return (
     <div className="flex h-full flex-col">
@@ -123,6 +157,20 @@ export function WhiteboardEditorPage() {
           <Button variant="outline" size="icon" onClick={() => addElement("circle")} title="Circle">
             <Circle className="size-4" />
           </Button>
+          <Button variant="outline" size="icon" onClick={() => addElement("text")} title="Text">
+            <Type className="size-4" />
+          </Button>
+          {selectedId && (
+            <Button
+              variant="outline"
+              size="icon"
+              className="mt-auto text-destructive hover:text-destructive"
+              onClick={() => removeElement(selectedId)}
+              title="Delete selected"
+            >
+              <Trash2 className="size-4" />
+            </Button>
+          )}
         </div>
 
         <div
@@ -146,13 +194,16 @@ export function WhiteboardEditorPage() {
                 key={el.id}
                 onPointerDown={(e) => {
                   e.stopPropagation();
+                  setSelectedId(el.id);
                   dragging.current = { id: el.id, startX: e.clientX, startY: e.clientY, origin: { x: el.x, y: el.y } };
                 }}
                 className={cn(
                   "absolute cursor-move shadow-sm",
                   el.type === "sticky" && "rounded-md p-2",
                   el.type === "rectangle" && "rounded-md border-2",
-                  el.type === "circle" && "rounded-full border-2"
+                  el.type === "circle" && "rounded-full border-2",
+                  el.type === "text" && "p-1",
+                  selectedId === el.id && "ring-2 ring-primary ring-offset-2 ring-offset-background"
                 )}
                 style={{
                   left: el.x,
@@ -160,22 +211,27 @@ export function WhiteboardEditorPage() {
                   width: el.width,
                   height: el.height,
                   backgroundColor: el.type === "sticky" ? el.color : "transparent",
-                  borderColor: el.type !== "sticky" ? el.color : undefined,
+                  borderColor: el.type === "rectangle" || el.type === "circle" ? el.color : undefined,
                 }}
               >
-                {el.type === "sticky" && (
-                  <textarea
-                    value={el.text}
-                    onPointerDown={(e) => e.stopPropagation()}
-                    onChange={(e) =>
-                      setElements((prev) =>
-                        prev.map((p) => (p.id === el.id ? { ...p, text: e.target.value } : p))
-                      )
-                    }
-                    className="h-full w-full resize-none border-none bg-transparent text-sm outline-none placeholder:text-black/40"
-                    placeholder="Type something…"
-                  />
-                )}
+                <textarea
+                  value={el.text}
+                  onPointerDown={(e) => e.stopPropagation()}
+                  onChange={(e) =>
+                    setElements((prev) =>
+                      prev.map((p) => (p.id === el.id ? { ...p, text: e.target.value } : p))
+                    )
+                  }
+                  className={cn(
+                    "h-full w-full resize-none border-none bg-transparent text-sm outline-none placeholder:text-muted-foreground",
+                    (el.type === "rectangle" || el.type === "circle") && "px-3 text-center",
+                    el.type === "circle" && "flex items-center",
+                    el.type === "text" && "font-medium",
+                    el.type === "sticky" && "placeholder:text-black/40"
+                  )}
+                  style={{ color: el.type === "rectangle" || el.type === "circle" ? el.color : undefined }}
+                  placeholder={el.type === "text" ? "Text…" : "Type something…"}
+                />
               </div>
             ))}
           </div>

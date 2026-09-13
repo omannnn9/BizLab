@@ -31,6 +31,7 @@ const AVAILABLE_WIDGETS: { type: WidgetType; label: string }[] = [
   { type: "projects_overview", label: "Projects overview" },
   { type: "team_productivity", label: "Team productivity" },
   { type: "channel_activity", label: "Channel activity" },
+  { type: "quick_links", label: "Quick links" },
 ];
 
 export function DashboardPage() {
@@ -133,6 +134,7 @@ export function DashboardPage() {
               >
                 <WidgetRenderer
                   widget={widget}
+                  dashboardId={activeDashboardId}
                   onRemove={canEditWidgets ? () => removeWidget.mutate(widget.id) : undefined}
                 />
               </div>

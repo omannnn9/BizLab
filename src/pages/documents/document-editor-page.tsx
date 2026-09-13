@@ -17,12 +17,13 @@ import { useWorkspace } from "@/hooks/use-workspace";
 import { RichTextEditor } from "@/components/documents/rich-text-editor";
 import { VersionHistoryPanel } from "@/components/documents/version-history-panel";
 import { ShareDialog } from "@/components/documents/share-dialog";
+import { EntityLoadGuard } from "@/components/shared/entity-load-guard";
 import { normalizeRichContent } from "@/lib/tiptap-content";
 import type { JSONContent } from "@tiptap/react";
 
 export function DocumentEditorPage() {
   const { documentId } = useParams<{ documentId: string }>();
-  const { data: document, isLoading } = useDocument(documentId);
+  const { data: document, isLoading, isError } = useDocument(documentId);
   const { data: parent } = useDocument(document?.parent_document_id ?? undefined);
   const { data: children } = useChildDocuments(documentId);
   const saveVersion = useSaveDocumentVersion(documentId);
@@ -62,7 +63,17 @@ export function DocumentEditorPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [title, content]);
 
-  if (isLoading || !document) return null;
+  if (isLoading || isError || !document) {
+    return (
+      <EntityLoadGuard
+        isLoading={isLoading}
+        isError={isError}
+        backTo={`/w/${company?.slug}/documents`}
+        backLabel="Back to documents"
+        notFoundMessage="This document doesn't exist or you don't have access to it."
+      />
+    );
+  }
 
   return (
     <div className="flex h-full">

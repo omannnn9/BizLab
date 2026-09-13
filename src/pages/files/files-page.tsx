@@ -1,4 +1,5 @@
 import { useRef, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import {
   Download,
   File as FileIcon,
@@ -18,6 +19,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { EmptyState } from "@/components/shared/empty-state";
 import { useCreateFolder, useFolders } from "@/hooks/use-folders";
 import { useDeleteFile, useFiles, useUploadFile, getFileDownloadUrl } from "@/hooks/use-files";
+import { useWorkspace } from "@/hooks/use-workspace";
 
 function iconFor(mimeType: string | null) {
   if (mimeType?.startsWith("image/")) return ImageIcon;
@@ -31,6 +33,8 @@ export function FilesPage() {
   const [newFolderName, setNewFolderName] = useState("");
   const [addingFolder, setAddingFolder] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
+  const { company } = useWorkspace();
+  const navigate = useNavigate();
 
   const { data: folders } = useFolders("files");
   const { data: files, isLoading } = useFiles(folderId);
@@ -176,9 +180,14 @@ export function FilesPage() {
                     const Icon = iconFor(file.mime_type);
                     return (
                       <tr key={file.id} className="hover:bg-accent/50">
-                        <td className="flex items-center gap-2 px-4 py-2.5 font-medium">
-                          <Icon className="size-4 text-muted-foreground" />
-                          {file.name}
+                        <td className="px-4 py-2.5 font-medium">
+                          <button
+                            onClick={() => navigate(`/w/${company?.slug}/files/${file.id}`)}
+                            className="flex items-center gap-2 text-left hover:underline"
+                          >
+                            <Icon className="size-4 shrink-0 text-muted-foreground" />
+                            {file.name}
+                          </button>
                         </td>
                         <td className="px-4 py-2.5 text-muted-foreground">{formatBytes(file.file_size)}</td>
                         <td className="px-4 py-2.5 text-muted-foreground">

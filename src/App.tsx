@@ -33,6 +33,7 @@ const DocumentEditorPage = lazy(() =>
   import("@/pages/documents/document-editor-page").then((m) => ({ default: m.DocumentEditorPage }))
 );
 const FilesPage = lazy(() => import("@/pages/files/files-page").then((m) => ({ default: m.FilesPage })));
+const FileEditorPage = lazy(() => import("@/pages/files/file-editor-page").then((m) => ({ default: m.FileEditorPage })));
 const ChatPage = lazy(() => import("@/pages/chat/chat-page").then((m) => ({ default: m.ChatPage })));
 const WhiteboardsPage = lazy(() =>
   import("@/pages/whiteboards/whiteboards-page").then((m) => ({ default: m.WhiteboardsPage }))
@@ -105,6 +106,7 @@ export default function App() {
                         <Route path="documents" element={<DocumentsPage />} />
                         <Route path="documents/:documentId" element={<DocumentEditorPage />} />
                         <Route path="files" element={<FilesPage />} />
+                        <Route path="files/:fileId" element={<FileEditorPage />} />
                         <Route path="chat" element={<ChatPage />} />
                         <Route path="chat/:channelId" element={<ChatPage />} />
                         <Route path="whiteboards" element={<WhiteboardsPage />} />

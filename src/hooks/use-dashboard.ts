@@ -108,6 +108,21 @@ export function useAddWidget(dashboardId: string | undefined) {
   });
 }
 
+export function useUpdateWidgetConfig(dashboardId: string | undefined) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ widgetId, config }: { widgetId: string; config: Record<string, unknown> }) => {
+      const { error } = await supabase.from("dashboard_widgets").update({ config }).eq("id", widgetId);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: ["dashboard", dashboardId] });
+      void queryClient.invalidateQueries({ queryKey: ["dashboard", "default"] });
+    },
+  });
+}
+
 export function useRemoveWidget(dashboardId: string | undefined) {
   const queryClient = useQueryClient();
 
