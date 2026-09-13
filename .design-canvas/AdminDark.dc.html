@@ -1,0 +1,151 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="UTF-8">
+<script src="./support.js"></script>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@600;700;800&family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+<style>
+  :root{
+    --bg:#0D1016; --surface:#161A22; --surface-alt:#12151B;
+    --border:#262B35; --border-strong:#333947;
+    --text:#E7E9EE; --text-muted:#99A0AD; --text-faint:#6B7180;
+    --accent:#2DC4D0; --accent-strong:#2DC4D0; --accent-tint:rgba(45,196,208,.14);
+    --success:#6FBE8C; --success-tint:rgba(111,190,140,.14); --danger:#E08277; --danger-tint:rgba(224,130,119,.14); --warn:#D9A756; --warn-tint:rgba(217,167,86,.14);
+    --sb-bg:#0A0C11; --sb-border:rgba(255,255,255,.06); --sb-text:#A9AFBC; --sb-text-dim:#6C7383;
+    --sb-active-bg:rgba(45,196,208,.16); --sb-active-text:#2DC4D0; --sb-icon:#7C8494;
+    --shadow-sm:0 1px 2px rgba(0,0,0,.4);
+    --shadow-lg:0 24px 64px rgba(0,0,0,.6);
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{width:1440px;height:900px;background:var(--bg);font-family:'IBM Plex Sans',system-ui,sans-serif;color:var(--text);overflow:hidden;}
+  svg.i{width:16px;height:16px;stroke:currentColor;fill:none;stroke-width:1.75;stroke-linecap:round;stroke-linejoin:round;flex-shrink:0;}
+  .app{display:grid;grid-template-columns:236px 1fr;width:1440px;height:900px;position:relative;}
+  .sidebar{background:var(--sb-bg);color:var(--sb-text);display:flex;flex-direction:column;padding:18px 12px;border-right:1px solid var(--sb-border);}
+  .sb-switcher{display:flex;align-items:center;gap:9px;padding:9px 8px;border-radius:8px;border:1px solid var(--sb-border);margin-bottom:18px;}
+  .sb-switcher .mark{width:26px;height:26px;border-radius:6px;background:var(--accent);display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+  .sb-switcher .mark svg{width:14px;height:14px;stroke:#0A0C11;}
+  .sb-switcher .name{font-size:12.5px;font-weight:600;color:#fff;line-height:1.2;}
+  .sb-switcher .sub{font-size:10.5px;color:var(--sb-text-dim);font-family:'IBM Plex Mono',monospace;}
+  .sb-group{font-size:10px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--sb-text-dim);margin:14px 8px 6px;}
+  .sb-group:first-of-type{margin-top:2px;}
+  .sb-item{display:flex;align-items:center;gap:10px;padding:8px 9px;border-radius:7px;font-size:13px;font-weight:500;color:var(--sb-text);margin-bottom:1px;}
+  .sb-item svg{color:var(--sb-icon);}
+  .sb-item.active{background:var(--sb-active-bg);color:var(--sb-active-text);}
+  .sb-item.active svg{color:var(--sb-active-text);}
+  .sb-bottom{margin-top:auto;padding-top:12px;border-top:1px solid var(--sb-border);display:flex;align-items:center;gap:9px;padding:10px 8px 4px;}
+  .sb-avatar{width:28px;height:28px;border-radius:7px;background:#232935;color:#fff;font-size:11px;font-weight:600;display:flex;align-items:center;justify-content:center;font-family:'IBM Plex Mono',monospace;flex-shrink:0;}
+  .sb-user-name{font-size:12.5px;font-weight:600;color:#fff;line-height:1.3;}
+  .sb-user-role{font-size:10.5px;color:var(--sb-text-dim);}
+  .main{display:flex;flex-direction:column;min-width:0;}
+  .topbar{height:60px;flex-shrink:0;display:flex;align-items:center;gap:16px;padding:0 24px;border-bottom:1px solid var(--border);background:var(--surface);}
+  .topbar h1{font-family:'Archivo',sans-serif;font-size:16px;font-weight:700;margin:0;}
+  .admin-tabs{display:flex;gap:4px;margin-left:20px;}
+  .admin-tabs span{font-size:12.5px;font-weight:600;padding:7px 12px;border-radius:7px;color:var(--text-muted);}
+  .admin-tabs span.on{background:var(--accent-tint);color:var(--accent);}
+  .btn{height:32px;padding:0 13px;border-radius:7px;font-size:12.5px;font-weight:600;display:flex;align-items:center;gap:6px;border:1px solid var(--border-strong);color:var(--text);background:var(--surface);}
+  .btn.primary{background:var(--accent);color:#0A0C11;border:none;margin-left:auto;font-weight:700;}
+  .btn svg{width:14px;height:14px;}
+  .content{flex:1;overflow:hidden;padding:22px 24px;display:flex;flex-direction:column;gap:16px;}
+  .page-head{display:flex;align-items:center;}
+  .page-head h2{font-family:'Archivo',sans-serif;font-size:20px;font-weight:700;margin:0;}
+  .page-head p{margin:2px 0 0;font-size:12.5px;color:var(--text-muted);}
+  table{width:100%;border-collapse:collapse;background:var(--surface);border:1px solid var(--border-strong);border-radius:10px;overflow:hidden;box-shadow:var(--shadow-sm);}
+  thead th{text-align:left;font-size:10.5px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--text-faint);padding:11px 16px;background:var(--surface-alt);border-bottom:1px solid var(--border);}
+  tbody td{padding:12px 16px;font-size:13px;border-bottom:1px solid var(--border);}
+  tbody tr:last-child td{border-bottom:none;}
+  .u-cell{display:flex;align-items:center;gap:10px;}
+  .u-avatar{width:30px;height:30px;border-radius:8px;background:var(--accent-tint);color:var(--accent);font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;font-family:'IBM Plex Mono',monospace;flex-shrink:0;}
+  .u-name{font-weight:600;font-size:13px;color:var(--text);}
+  .u-email{font-size:11.5px;color:var(--text-faint);font-family:'IBM Plex Mono',monospace;}
+  .pill{display:inline-flex;align-items:center;font-size:11px;font-weight:700;padding:3px 9px;border-radius:999px;letter-spacing:.01em;}
+  .pill.owner{background:var(--accent-tint);color:var(--accent);}
+  .pill.admin{background:rgba(157,122,224,.18);color:#B29CF0;}
+  .pill.manager{background:var(--warn-tint);color:var(--warn);}
+  .pill.member{background:var(--surface-alt);color:var(--text-muted);border:1px solid var(--border-strong);}
+  .status-dot{display:inline-flex;align-items:center;gap:6px;font-size:12.5px;font-weight:500;}
+  .status-dot i{width:7px;height:7px;border-radius:50%;}
+  .status-dot.active i{background:var(--success);}
+  .status-dot.invited i{background:var(--warn);}
+  .status-dot.suspended i{background:var(--danger);}
+  .row-more{color:var(--text-faint);}
+  .overlay{position:absolute;inset:0;background:rgba(0,0,0,.6);display:flex;align-items:center;justify-content:center;}
+  .modal{width:440px;background:var(--surface);border:1px solid var(--border-strong);border-radius:12px;box-shadow:var(--shadow-lg);padding:24px;}
+  .modal-head{display:flex;align-items:center;margin-bottom:4px;}
+  .modal-head h3{font-family:'Archivo',sans-serif;font-size:17px;font-weight:700;margin:0;}
+  .modal-head svg{margin-left:auto;color:var(--text-faint);width:18px;height:18px;}
+  .modal p.sub{font-size:12.5px;color:var(--text-muted);margin:2px 0 20px;}
+  .field{margin-bottom:14px;}
+  .field label{display:block;font-size:12px;font-weight:600;margin-bottom:6px;}
+  .field input,.field select{width:100%;height:38px;border:1px solid var(--border-strong);border-radius:7px;padding:0 12px;font-size:13px;font-family:'IBM Plex Sans',sans-serif;background:var(--surface-alt);color:var(--text);}
+  .field-row{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+  .modal-actions{display:flex;justify-content:flex-end;gap:10px;margin-top:20px;}
+  .btn-ghost{height:36px;padding:0 14px;border-radius:7px;font-size:13px;font-weight:600;color:var(--text-muted);background:transparent;border:none;}
+  .btn-send{height:36px;padding:0 16px;border-radius:7px;font-size:13px;font-weight:700;color:#0A0C11;background:var(--accent);border:none;display:flex;align-items:center;gap:6px;}
+</style>
+</head>
+<body>
+<div class="app">
+  <aside class="sidebar">
+    <div class="sb-switcher">
+      <div class="mark"><svg viewBox="0 0 24 24" style="stroke:#0A0C11;stroke-width:2;fill:none"><path d="M4 20V9l8-6 8 6v11"/><path d="M9 20v-7h6v7"/></svg></div>
+      <div><div class="name">Cascade Robotics</div><div class="sub">OD HOLDINGS</div></div>
+    </div>
+    <div class="sb-group">Workspace</div>
+    <div class="sb-item"><svg class="i" viewBox="0 0 24 24"><path d="M3 11l9-8 9 8"/><path d="M5 10v10h14V10"/></svg>Dashboard</div>
+    <div class="sb-item"><svg class="i" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M8 12l3 3 5-6"/></svg>Tasks</div>
+    <div class="sb-item"><svg class="i" viewBox="0 0 24 24"><path d="M6 2h9l5 5v15H6z"/><path d="M14 2v6h6"/><path d="M9 13h6M9 17h6M9 9h2"/></svg>Documents</div>
+    <div class="sb-item"><svg class="i" viewBox="0 0 24 24"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>Chat</div>
+    <div class="sb-item"><svg class="i" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg>Whiteboards</div>
+    <div class="sb-item"><svg class="i" viewBox="0 0 24 24"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>Knowledge Hub</div>
+    <div class="sb-group">Business</div>
+    <div class="sb-item"><svg class="i" viewBox="0 0 24 24"><circle cx="9" cy="7" r="4"/><path d="M2 21v-2a4 4 0 0 1 4-4h6a4 4 0 0 1 4 4v2"/><path d="M17 3.5a4 4 0 0 1 0 7.5"/><path d="M23 21v-2a4 4 0 0 0-3-3.9"/></svg>CRM</div>
+    <div class="sb-item"><svg class="i" viewBox="0 0 24 24"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/></svg>HR</div>
+    <div class="sb-item"><svg class="i" viewBox="0 0 24 24"><path d="M18 20V10M12 20V4M6 20v-6"/></svg>Finance</div>
+    <div class="sb-group">System</div>
+    <div class="sb-item active"><svg class="i" viewBox="0 0 24 24"><path d="M12 2l8 4v6c0 5-3.5 8.5-8 10-4.5-1.5-8-5-8-10V6z"/></svg>Administration</div>
+    <div class="sb-bottom">
+      <div class="sb-avatar">PN</div>
+      <div><div class="sb-user-name">Priya Nathan</div><div class="sb-user-role">Platform Admin</div></div>
+    </div>
+  </aside>
+  <div class="main">
+    <header class="topbar">
+      <h1>Administration</h1>
+      <div class="admin-tabs"><span class="on">People</span><span>Companies</span><span>Security</span><span>Audit Log</span></div>
+      <button class="btn primary"><svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>Invite user</button>
+    </header>
+    <div class="content">
+      <div class="page-head"><div><h2>People</h2><p>42 people across 3 companies</p></div></div>
+      <table>
+        <thead><tr><th>Name</th><th>Company</th><th>Role</th><th>Status</th><th>Last active</th><th></th></tr></thead>
+        <tbody>
+          <tr><td><div class="u-cell"><div class="u-avatar">PN</div><div><div class="u-name">Priya Nathan</div><div class="u-email">priya.nathan@cascaderobotics.com</div></div></div></td><td>Cascade Robotics</td><td><span class="pill owner">PLATFORM ADMIN</span></td><td><span class="status-dot active"><i></i>Active</span></td><td style="font-family:'IBM Plex Mono',monospace;color:var(--text-muted)">2 min ago</td><td class="row-more">⋯</td></tr>
+          <tr><td><div class="u-cell"><div class="u-avatar">MC</div><div><div class="u-name">Marcus Cole</div><div class="u-email">marcus.cole@cascaderobotics.com</div></div></div></td><td>Cascade Robotics</td><td><span class="pill manager">MANAGER</span></td><td><span class="status-dot active"><i></i>Active</span></td><td style="font-family:'IBM Plex Mono',monospace;color:var(--text-muted)">14 min ago</td><td class="row-more">⋯</td></tr>
+          <tr><td><div class="u-cell"><div class="u-avatar">EF</div><div><div class="u-name">Elena Ferreira</div><div class="u-email">elena.ferreira@cascaderobotics.com</div></div></div></td><td>Cascade Robotics</td><td><span class="pill member">MEMBER</span></td><td><span class="status-dot active"><i></i>Active</span></td><td style="font-family:'IBM Plex Mono',monospace;color:var(--text-muted)">1 hr ago</td><td class="row-more">⋯</td></tr>
+          <tr><td><div class="u-cell"><div class="u-avatar">SO</div><div><div class="u-name">Sam Okafor</div><div class="u-email">sam.okafor@cascaderobotics.com</div></div></div></td><td>Cascade Robotics</td><td><span class="pill member">MEMBER</span></td><td><span class="status-dot active"><i></i>Active</span></td><td style="font-family:'IBM Plex Mono',monospace;color:var(--text-muted)">3 hrs ago</td><td class="row-more">⋯</td></tr>
+          <tr><td><div class="u-cell"><div class="u-avatar">DW</div><div><div class="u-name">Dana Whitfield</div><div class="u-email">dana.whitfield@northbridgelog.com</div></div></div></td><td>Northbridge Logistics</td><td><span class="pill manager">MANAGER</span></td><td><span class="status-dot invited"><i></i>Invited</span></td><td style="font-family:'IBM Plex Mono',monospace;color:var(--text-faint)">—</td><td class="row-more">⋯</td></tr>
+          <tr><td><div class="u-cell"><div class="u-avatar">TM</div><div><div class="u-name">Theo Marsh</div><div class="u-email">theo.marsh@cascaderobotics.com</div></div></div></td><td>Cascade Robotics</td><td><span class="pill member">MEMBER</span></td><td><span class="status-dot suspended"><i></i>Suspended</span></td><td style="font-family:'IBM Plex Mono',monospace;color:var(--text-muted)">6 days ago</td><td class="row-more">⋯</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+  <div class="overlay">
+    <div class="modal">
+      <div class="modal-head"><h3>Invite user</h3><svg viewBox="0 0 24 24" style="stroke-width:2"><path d="M6 6l12 12M18 6L6 18"/></svg></div>
+      <p class="sub">They'll receive an email to set their password and join.</p>
+      <div class="field"><label>Full name</label><input value="Dana Whitfield"></div>
+      <div class="field"><label>Email address</label><input value="dana.whitfield@northbridgelog.com"></div>
+      <div class="field-row">
+        <div class="field"><label>Company</label><select><option>Northbridge Logistics</option></select></div>
+        <div class="field"><label>Role</label><select><option>Manager</option></select></div>
+      </div>
+      <div class="modal-actions">
+        <button class="btn-ghost">Cancel</button>
+        <button class="btn-send"><svg class="i" viewBox="0 0 24 24" style="width:14px;height:14px;stroke:#0A0C11"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 6l9 7 9-7"/></svg>Send invite</button>
+      </div>
+    </div>
+  </div>
+</div>
+</body>
+</html>

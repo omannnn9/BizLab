@@ -22,3 +22,6 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Claude Design canvas build artifact (regenerate via seed-canvas.mjs from .design-canvas/*.dc.html)
+.design-canvas/bizlab-design-system.html

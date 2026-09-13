@@ -1,0 +1,154 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="UTF-8">
+<script src="./support.js"></script>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@600;700;800&family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+<style>
+  :root{
+    --bg:#F3F4F6; --surface:#FFFFFF; --surface-alt:#F8F9FB;
+    --border:#E2E5EA; --border-strong:#CDD2DA;
+    --text:#171B22; --text-muted:#5B626F; --text-faint:#8891A0;
+    --accent:#0E7C86; --accent-strong:#0B636B; --accent-tint:#E5F1F2;
+    --code-bg:#171B22; --code-text:#D7DCE3;
+    --sb-bg:#10131A; --sb-border:rgba(255,255,255,.06); --sb-text:#A9AFBC; --sb-text-dim:#6C7383;
+    --sb-active-bg:rgba(45,196,208,.14); --sb-active-text:#2DC4D0; --sb-icon:#7C8494;
+    --shadow-sm:0 1px 2px rgba(13,16,22,.06);
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{width:1440px;height:900px;background:var(--bg);font-family:'IBM Plex Sans',system-ui,sans-serif;color:var(--text);overflow:hidden;}
+  svg.i{width:16px;height:16px;stroke:currentColor;fill:none;stroke-width:1.75;stroke-linecap:round;stroke-linejoin:round;flex-shrink:0;}
+  .app{display:grid;grid-template-columns:236px 1fr;width:1440px;height:900px;}
+  .sidebar{background:var(--sb-bg);color:var(--sb-text);display:flex;flex-direction:column;padding:18px 12px;border-right:1px solid var(--sb-border);}
+  .sb-switcher{display:flex;align-items:center;gap:9px;padding:9px 8px;border-radius:8px;border:1px solid var(--sb-border);margin-bottom:18px;}
+  .sb-switcher .mark{width:26px;height:26px;border-radius:6px;background:var(--accent);display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+  .sb-switcher .mark svg{width:14px;height:14px;stroke:#fff;}
+  .sb-switcher .name{font-size:12.5px;font-weight:600;color:#fff;line-height:1.2;}
+  .sb-switcher .sub{font-size:10.5px;color:var(--sb-text-dim);font-family:'IBM Plex Mono',monospace;}
+  .sb-switcher svg.chev{margin-left:auto;width:14px;height:14px;stroke:var(--sb-text-dim);}
+  .sb-group{font-size:10px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--sb-text-dim);margin:14px 8px 6px;}
+  .sb-group:first-of-type{margin-top:2px;}
+  .sb-item{display:flex;align-items:center;gap:10px;padding:8px 9px;border-radius:7px;font-size:13px;font-weight:500;color:var(--sb-text);margin-bottom:1px;}
+  .sb-item svg{color:var(--sb-icon);}
+  .sb-item.active{background:var(--sb-active-bg);color:var(--sb-active-text);}
+  .sb-item.active svg{color:var(--sb-active-text);}
+  .sb-bottom{margin-top:auto;padding-top:12px;border-top:1px solid var(--sb-border);display:flex;align-items:center;gap:9px;padding:10px 8px 4px;}
+  .sb-avatar{width:28px;height:28px;border-radius:7px;background:#2B303C;color:#fff;font-size:11px;font-weight:600;display:flex;align-items:center;justify-content:center;font-family:'IBM Plex Mono',monospace;flex-shrink:0;}
+  .sb-user-name{font-size:12.5px;font-weight:600;color:#fff;line-height:1.3;}
+  .sb-user-role{font-size:10.5px;color:var(--sb-text-dim);}
+  .main{display:grid;grid-template-columns:220px 1fr;min-width:0;}
+  .folders{border-right:1px solid var(--border);background:var(--surface);padding:18px 12px;overflow-y:auto;}
+  .folders h4{font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--text-faint);margin:0 0 10px 6px;}
+  .folder-item{display:flex;align-items:center;gap:8px;padding:7px 7px;border-radius:6px;font-size:12.5px;font-weight:500;color:var(--text-muted);}
+  .folder-item svg{color:var(--text-faint);}
+  .folder-item.active{background:var(--accent-tint);color:var(--accent-strong);}
+  .folder-item.active svg{color:var(--accent-strong);}
+  .folder-item .n{margin-left:auto;font-family:'IBM Plex Mono',monospace;font-size:10.5px;color:var(--text-faint);}
+  .editor-wrap{display:flex;flex-direction:column;min-width:0;}
+  .doc-topbar{height:60px;flex-shrink:0;display:flex;align-items:center;gap:14px;padding:0 24px;border-bottom:1px solid var(--border);background:var(--surface);}
+  .breadcrumb{font-size:12.5px;color:var(--text-faint);display:flex;align-items:center;gap:6px;}
+  .breadcrumb b{color:var(--text);font-weight:600;}
+  .save-status{margin-left:auto;font-size:11.5px;color:var(--text-faint);display:flex;align-items:center;gap:6px;}
+  .save-status svg{width:13px;height:13px;color:var(--accent-strong);}
+  .toolbar{display:flex;align-items:center;gap:2px;padding:8px 24px;border-bottom:1px solid var(--border);background:var(--surface-alt);}
+  .tb-btn{width:29px;height:29px;border-radius:6px;display:flex;align-items:center;justify-content:center;color:var(--text-muted);}
+  .tb-btn.on{background:var(--accent-tint);color:var(--accent-strong);}
+  .tb-btn svg{width:15px;height:15px;}
+  .tb-sep{width:1px;height:18px;background:var(--border-strong);margin:0 7px;}
+  .doc-body{flex:1;overflow-y:auto;padding:36px 0;display:flex;justify-content:center;}
+  .doc-inner{width:660px;}
+  .doc-inner h1{font-family:'Archivo',sans-serif;font-size:28px;font-weight:700;margin:0 0 20px;letter-spacing:-.01em;}
+  .doc-inner h2{font-family:'Archivo',sans-serif;font-size:18px;font-weight:700;margin:28px 0 10px;}
+  .doc-inner p{font-size:14px;line-height:1.75;color:var(--text);margin:0 0 14px;}
+  .tasklist{list-style:none;margin:0 0 18px;padding:0;}
+  .tasklist li{display:flex;align-items:flex-start;gap:9px;font-size:13.5px;padding:5px 0;}
+  .tasklist .box{width:16px;height:16px;border-radius:4px;border:1.5px solid var(--border-strong);flex-shrink:0;margin-top:2px;display:flex;align-items:center;justify-content:center;}
+  .tasklist .box.checked{background:var(--accent);border-color:var(--accent);}
+  .tasklist .box.checked svg{width:11px;height:11px;stroke:#fff;stroke-width:3;}
+  .tasklist li.done span{text-decoration:line-through;color:var(--text-faint);}
+  .codeblock{background:var(--code-bg);color:var(--code-text);border-radius:8px;padding:16px 18px;font-family:'IBM Plex Mono',monospace;font-size:12.5px;line-height:1.7;margin:0 0 18px;overflow-x:auto;}
+  .codeblock .c1{color:#7C8494;}
+  .codeblock .c2{color:#2DC4D0;}
+  .codeblock .c3{color:#D9A756;}
+</style>
+</head>
+<body>
+<div class="app">
+  <aside class="sidebar">
+    <div class="sb-switcher">
+      <div class="mark"><svg viewBox="0 0 24 24" style="stroke:#fff;stroke-width:2;fill:none"><path d="M4 20V9l8-6 8 6v11"/><path d="M9 20v-7h6v7"/></svg></div>
+      <div><div class="name">Cascade Robotics</div><div class="sub">OD HOLDINGS</div></div>
+      <svg class="chev i" viewBox="0 0 24 24"><path d="M7 15l5 5 5-5M7 9l5-5 5 5"/></svg>
+    </div>
+    <div class="sb-group">Workspace</div>
+    <div class="sb-item"><svg class="i" viewBox="0 0 24 24"><path d="M3 11l9-8 9 8"/><path d="M5 10v10h14V10"/></svg>Dashboard</div>
+    <div class="sb-item"><svg class="i" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M8 12l3 3 5-6"/></svg>Tasks</div>
+    <div class="sb-item active"><svg class="i" viewBox="0 0 24 24"><path d="M6 2h9l5 5v15H6z"/><path d="M14 2v6h6"/><path d="M9 13h6M9 17h6M9 9h2"/></svg>Documents</div>
+    <div class="sb-item"><svg class="i" viewBox="0 0 24 24"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>Chat</div>
+    <div class="sb-item"><svg class="i" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg>Whiteboards</div>
+    <div class="sb-item"><svg class="i" viewBox="0 0 24 24"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>Knowledge Hub</div>
+    <div class="sb-group">Business</div>
+    <div class="sb-item"><svg class="i" viewBox="0 0 24 24"><circle cx="9" cy="7" r="4"/><path d="M2 21v-2a4 4 0 0 1 4-4h6a4 4 0 0 1 4 4v2"/><path d="M17 3.5a4 4 0 0 1 0 7.5"/><path d="M23 21v-2a4 4 0 0 0-3-3.9"/></svg>CRM</div>
+    <div class="sb-item"><svg class="i" viewBox="0 0 24 24"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/></svg>HR</div>
+    <div class="sb-item"><svg class="i" viewBox="0 0 24 24"><path d="M18 20V10M12 20V4M6 20v-6"/></svg>Finance</div>
+    <div class="sb-group">System</div>
+    <div class="sb-item"><svg class="i" viewBox="0 0 24 24"><path d="M12 2l8 4v6c0 5-3.5 8.5-8 10-4.5-1.5-8-5-8-10V6z"/></svg>Administration</div>
+    <div class="sb-bottom">
+      <div class="sb-avatar">PN</div>
+      <div><div class="sb-user-name">Priya Nathan</div><div class="sb-user-role">Operations Lead</div></div>
+    </div>
+  </aside>
+  <div class="main">
+    <div class="folders">
+      <h4>Folders</h4>
+      <div class="folder-item"><svg class="i" viewBox="0 0 24 24"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>Engineering Specs<span class="n">18</span></div>
+      <div class="folder-item active"><svg class="i" viewBox="0 0 24 24"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>Safety &amp; Compliance<span class="n">7</span></div>
+      <div class="folder-item"><svg class="i" viewBox="0 0 24 24"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>Vendor Contracts<span class="n">11</span></div>
+      <div class="folder-item"><svg class="i" viewBox="0 0 24 24"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>SOPs<span class="n">24</span></div>
+    </div>
+    <div class="editor-wrap">
+      <div class="doc-topbar">
+        <div class="breadcrumb"><svg class="i" viewBox="0 0 24 24" style="width:14px;height:14px"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>Safety &amp; Compliance / <b>Q4 Assembly Line Retrofit — Safety Checklist</b></div>
+        <div class="save-status"><svg viewBox="0 0 24 24" style="stroke-width:2"><path d="M20 6L9 17l-5-5"/></svg>Saved</div>
+      </div>
+      <div class="toolbar">
+        <div class="tb-btn on"><svg viewBox="0 0 24 24" style="stroke-width:2"><path d="M6 4h6a3.5 3.5 0 0 1 0 7H6z"/><path d="M6 11h7a3.5 3.5 0 0 1 0 7H6z"/></svg></div>
+        <div class="tb-btn"><svg viewBox="0 0 24 24" style="stroke-width:2"><line x1="19" y1="4" x2="10" y2="4"/><line x1="14" y1="20" x2="5" y2="20"/><line x1="15" y1="4" x2="9" y2="20"/></svg></div>
+        <div class="tb-btn"><svg viewBox="0 0 24 24" style="stroke-width:2"><path d="M6 3v7a6 6 0 0 0 12 0V3"/><path d="M4 21h16"/></svg></div>
+        <div class="tb-btn"><svg viewBox="0 0 24 24" style="stroke-width:2"><path d="M4 12h16"/><path d="M16 6.5C15.5 5 13.8 4 12 4c-2.5 0-4.5 1.3-4.5 3.3 0 1.3.8 2.1 2 2.7"/><path d="M8 17.5c.5 1.5 2.2 2.5 4 2.5 2.5 0 4.5-1.3 4.5-3.3 0-1-.5-1.8-1.3-2.4"/></svg></div>
+        <div class="tb-sep"></div>
+        <div class="tb-btn" style="font-family:'Archivo',sans-serif;font-weight:700;font-size:12px">H1</div>
+        <div class="tb-btn" style="font-family:'Archivo',sans-serif;font-weight:700;font-size:12px">H2</div>
+        <div class="tb-sep"></div>
+        <div class="tb-btn"><svg viewBox="0 0 24 24" style="stroke-width:2"><path d="M9 6h11M9 12h11M9 18h11"/><circle cx="4.5" cy="6" r="1"/><circle cx="4.5" cy="12" r="1"/><circle cx="4.5" cy="18" r="1"/></svg></div>
+        <div class="tb-btn on"><svg viewBox="0 0 24 24" style="stroke-width:2"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M8 12l3 3 5-6"/></svg></div>
+        <div class="tb-sep"></div>
+        <div class="tb-btn on"><svg viewBox="0 0 24 24" style="stroke-width:2"><path d="M8 6l-5 6 5 6M16 6l5 6-5 6"/></svg></div>
+        <div class="tb-btn"><svg viewBox="0 0 24 24" style="stroke-width:2"><path d="M9 15l6-6"/><path d="M10 6l1-1a4 4 0 0 1 6 6l-1 1"/><path d="M14 18l-1 1a4 4 0 0 1-6-6l1-1"/></svg></div>
+        <div class="tb-sep"></div>
+        <div class="tb-btn"><svg viewBox="0 0 24 24" style="stroke-width:2"><path d="M9 14L4 9l5-5"/><path d="M4 9h10a6 6 0 0 1 0 12h-1"/></svg></div>
+        <div class="tb-btn"><svg viewBox="0 0 24 24" style="stroke-width:2"><path d="M15 14l5-5-5-5"/><path d="M20 9H10a6 6 0 0 0 0 12h1"/></svg></div>
+      </div>
+      <div class="doc-body">
+        <div class="doc-inner">
+          <h1>Q4 Assembly Line Retrofit — Safety Checklist</h1>
+          <p>This checklist governs pre-commissioning sign-off for the Line 3 retrofit. Every item requires initials from the assigned safety lead before the line returns to production.</p>
+          <h2>Pre-commissioning</h2>
+          <ul class="tasklist">
+            <li class="done"><span class="box checked"><svg viewBox="0 0 24 24" fill="none" stroke="#fff"><path d="M20 6L9 17l-5-5"/></svg></span><span>Lockout-tagout verification on all six robotic cells</span></li>
+            <li class="done"><span class="box checked"><svg viewBox="0 0 24 24" fill="none" stroke="#fff"><path d="M20 6L9 17l-5-5"/></svg></span><span>Emergency stop circuit continuity test</span></li>
+            <li><span class="box"></span><span>Guard interlock calibration — sensor array, Line 3</span></li>
+            <li><span class="box"></span><span>Third-party fire-suppression inspection sign-off</span></li>
+          </ul>
+          <h2>Calibration script</h2>
+          <p>Run the following against the sensor controller before enabling automatic mode:</p>
+          <div class="codeblock"><span class="c1">// calibrate-sensor-array.js</span><br><span class="c3">const</span> array = <span class="c2">connect</span>(<span class="c1">'line3-ctrl'</span>);<br>array.<span class="c2">setThreshold</span>(<span class="c1">0.42</span>);<br>array.<span class="c2">runSelfTest</span>();</div>
+          <p>Once the self-test passes with zero faults, notify the shift supervisor and update this document's status to Approved.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+</body>
+</html>

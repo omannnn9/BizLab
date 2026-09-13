@@ -1,0 +1,20 @@
+{
+  "artboards": [
+    { "file": "Login.dc.html", "x": 0, "y": 0, "w": 1440, "h": 900, "title": "Login — Light" },
+    { "file": "LoginDark.dc.html", "x": 1520, "y": 0, "w": 1440, "h": 900, "title": "Login — Dark" },
+    { "file": "Home.dc.html", "x": 0, "y": 1020, "w": 1440, "h": 900, "title": "Workspace Switcher — Light" },
+    { "file": "HomeDark.dc.html", "x": 1520, "y": 1020, "w": 1440, "h": 900, "title": "Workspace Switcher — Dark" },
+    { "file": "Main.dc.html", "x": 0, "y": 2040, "w": 1440, "h": 900, "title": "Dashboard — Light" },
+    { "file": "DashboardDark.dc.html", "x": 1520, "y": 2040, "w": 1440, "h": 900, "title": "Dashboard — Dark" },
+    { "file": "Tasks.dc.html", "x": 0, "y": 3060, "w": 1440, "h": 900, "title": "Tasks (Kanban) — Light" },
+    { "file": "TasksDark.dc.html", "x": 1520, "y": 3060, "w": 1440, "h": 900, "title": "Tasks (Kanban) — Dark" },
+    { "file": "Documents.dc.html", "x": 0, "y": 4080, "w": 1440, "h": 900, "title": "Documents — Light" },
+    { "file": "DocumentsDark.dc.html", "x": 1520, "y": 4080, "w": 1440, "h": 900, "title": "Documents — Dark" },
+    { "file": "Admin.dc.html", "x": 0, "y": 5100, "w": 1440, "h": 900, "title": "Administration — Light" },
+    { "file": "AdminDark.dc.html", "x": 1520, "y": 5100, "w": 1440, "h": 900, "title": "Administration — Dark" }
+  ],
+  "annotations": [
+    { "id": "brief-note", "x": -420, "y": 0, "w": 340, "text": "BizLab — OD Holdings internal workspace. New direction: cool graphite neutrals + a signature signal-teal accent (replacing the generic indigo/shadcn look), Archivo for display type, IBM Plex Sans/Mono for UI and data. Dark app chrome stays constant across both themes for brand continuity." }
+  ],
+  "launch": { "view": "canvas" }
+}

@@ -1,0 +1,94 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="UTF-8">
+<script src="./support.js"></script>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@600;700;800&family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+<style>
+  :root{
+    --bg:#0D1016; --surface:#161A22; --surface-alt:#12151B;
+    --border:#262B35; --border-strong:#333947;
+    --text:#E7E9EE; --text-muted:#99A0AD; --text-faint:#6B7180;
+    --accent:#2DC4D0; --accent-strong:#2DC4D0; --accent-tint:rgba(45,196,208,.14);
+    --shadow-sm:0 1px 2px rgba(0,0,0,.4);
+    --shadow-md:0 8px 24px rgba(0,0,0,.5);
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{width:1440px;height:900px;background:var(--bg);font-family:'IBM Plex Sans',system-ui,sans-serif;color:var(--text);overflow:hidden;}
+  svg.i{width:16px;height:16px;stroke:currentColor;fill:none;stroke-width:1.75;stroke-linecap:round;stroke-linejoin:round;flex-shrink:0;}
+  .topbar{height:64px;display:flex;align-items:center;padding:0 40px;border-bottom:1px solid var(--border);}
+  .brand{display:flex;align-items:center;gap:9px;}
+  .brand-mark{width:28px;height:28px;border-radius:7px;background:#0A0C11;border:1px solid var(--border-strong);display:flex;align-items:center;justify-content:center;}
+  .brand-mark svg{width:15px;height:15px;stroke:var(--accent);stroke-width:2;fill:none;}
+  .brand-name{font-family:'Archivo',sans-serif;font-weight:700;font-size:15px;color:#fff;}
+  .topbar .tb-user{margin-left:auto;display:flex;align-items:center;gap:10px;}
+  .tb-avatar{width:30px;height:30px;border-radius:8px;background:var(--accent-tint);color:var(--accent);font-size:11.5px;font-weight:700;display:flex;align-items:center;justify-content:center;font-family:'IBM Plex Mono',monospace;}
+  .tb-name{font-size:13px;font-weight:600;}
+  .wrap{max-width:960px;margin:0 auto;padding:64px 40px 40px;}
+  .eyebrow{font-size:11px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--accent);margin:0 0 12px;}
+  h1{font-family:'Archivo',sans-serif;font-size:32px;font-weight:700;margin:0 0 8px;letter-spacing:-.01em;}
+  .lede{font-size:14px;color:var(--text-muted);margin:0 0 36px;}
+  .co-grid{display:grid;grid-template-columns:1fr 1fr;gap:18px;}
+  .co-card{background:var(--surface);border:1px solid var(--border-strong);border-radius:12px;padding:24px;box-shadow:var(--shadow-sm);cursor:pointer;position:relative;}
+  .co-top{display:flex;align-items:center;gap:14px;margin-bottom:18px;}
+  .co-mark{width:44px;height:44px;border-radius:10px;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+  .co-mark svg{width:22px;height:22px;stroke:#fff;stroke-width:1.75;fill:none;}
+  .co-title{font-family:'Archivo',sans-serif;font-size:17px;font-weight:700;letter-spacing:-.005em;}
+  .co-sub{font-size:12px;color:var(--text-faint);margin-top:2px;}
+  .co-stats{display:flex;gap:22px;padding-top:16px;border-top:1px solid var(--border);}
+  .co-stat b{display:block;font-family:'IBM Plex Mono',monospace;font-size:16px;font-weight:600;color:#fff;}
+  .co-stat span{font-size:11px;color:var(--text-faint);}
+  .role-pill{position:absolute;top:24px;right:24px;font-size:10.5px;font-weight:700;letter-spacing:.03em;padding:4px 9px;border-radius:999px;background:var(--accent-tint);color:var(--accent);}
+  .badge-count{position:absolute;top:-6px;right:-6px;background:#E08277;color:#0A0C11;font-size:10px;font-weight:700;width:18px;height:18px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-family:'IBM Plex Mono',monospace;}
+  .admin-strip{margin-top:28px;display:flex;align-items:center;gap:14px;padding:16px 20px;border:1px dashed var(--border-strong);border-radius:10px;background:var(--surface-alt);}
+  .admin-strip svg{color:var(--accent);}
+  .admin-strip .t{font-size:13px;font-weight:600;}
+  .admin-strip .s{font-size:12px;color:var(--text-muted);}
+  .admin-strip .go{margin-left:auto;font-size:12px;font-weight:600;color:var(--accent);}
+</style>
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand"><div class="brand-mark"><svg viewBox="0 0 24 24"><path d="M4 20V9l8-6 8 6v11"/><path d="M9 20v-7h6v7"/></svg></div><span class="brand-name">OD Holdings</span></div>
+    <div class="tb-user"><span class="tb-name">Priya Nathan</span><div class="tb-avatar">PN</div></div>
+  </header>
+  <div class="wrap">
+    <div class="eyebrow">Workspace</div>
+    <h1>Welcome back, Priya</h1>
+    <p class="lede">You belong to 2 companies. Choose one to continue, or open Administration below.</p>
+    <div class="co-grid">
+      <div class="co-card">
+        <div class="badge-count">3</div>
+        <div class="co-top">
+          <div class="co-mark" style="background:#0A0C11;border:1px solid var(--border-strong)"><svg viewBox="0 0 24 24"><path d="M4 20V9l8-6 8 6v11"/><path d="M9 20v-7h6v7"/></svg></div>
+          <div><div class="co-title">Cascade Robotics</div><div class="co-sub">Automation &amp; robotics manufacturing</div></div>
+        </div>
+        <div class="co-stats">
+          <div class="co-stat"><b>24</b><span>Members</span></div>
+          <div class="co-stat"><b>42</b><span>Open tasks</span></div>
+          <div class="co-stat"><b>3</b><span>Unread</span></div>
+        </div>
+        <span class="role-pill">OPERATIONS LEAD</span>
+      </div>
+      <div class="co-card">
+        <div class="co-top">
+          <div class="co-mark" style="background:#5A3E14"><svg viewBox="0 0 24 24"><rect x="1" y="9" width="16" height="9"/><path d="M1 9l3-5h10l3 5"/><circle cx="6" cy="18" r="1.5"/><circle cx="14" cy="18" r="1.5"/></svg></div>
+          <div><div class="co-title">Northbridge Logistics</div><div class="co-sub">Freight &amp; distribution</div></div>
+        </div>
+        <div class="co-stats">
+          <div class="co-stat"><b>18</b><span>Members</span></div>
+          <div class="co-stat"><b>11</b><span>Open tasks</span></div>
+          <div class="co-stat"><b>0</b><span>Unread</span></div>
+        </div>
+        <span class="role-pill">MEMBER</span>
+      </div>
+    </div>
+    <div class="admin-strip">
+      <svg class="i" viewBox="0 0 24 24" style="width:20px;height:20px"><path d="M12 2l8 4v6c0 5-3.5 8.5-8 10-4.5-1.5-8-5-8-10V6z"/></svg>
+      <div><div class="t">Platform Administration</div><div class="s">Manage every company, user and security policy across OD Holdings</div></div>
+      <span class="go">Open console →</span>
+    </div>
+  </div>
+</body>
+</html>
