@@ -20,6 +20,7 @@ import {
   useReorderWidgets,
 } from "@/hooks/use-dashboard";
 import { useAuth } from "@/hooks/use-auth";
+import { usePermissions } from "@/hooks/use-permissions";
 import type { DashboardWidget, WidgetType } from "@/types/database";
 
 const AVAILABLE_WIDGETS: { type: WidgetType; label: string }[] = [
@@ -51,8 +52,16 @@ export function DashboardPage() {
   const removeWidget = useRemoveWidget(activeDashboardId);
   const reorderWidgets = useReorderWidgets(activeDashboardId);
   const [dragId, setDragId] = useState<string | null>(null);
+  const { can } = usePermissions();
 
-  const canEditWidgets = !dashboard || dashboard.owner_id === user?.id || dashboard.owner_id === null;
+  // Must mirror the dashboard_widgets RLS policy (0008_dashboards.sql):
+  // a personal dashboard's owner can always edit it; the shared/default
+  // company dashboard (owner_id null) needs manager+. The old check
+  // treated owner_id === null as editable by anyone, which showed every
+  // employee working "Add widget"/remove controls on the shared
+  // dashboard that silently failed against the DB the moment they used
+  // them — the actual bug behind "admin can't customize it for everyone".
+  const canEditWidgets = !dashboard || dashboard.owner_id === user?.id || (dashboard.owner_id === null && can("dashboards", "manage"));
 
   function handleDrop(targetWidget: DashboardWidget) {
     if (!dashboard || !dragId || dragId === targetWidget.id) return;

@@ -1,7 +1,7 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { formatDistanceToNow } from "date-fns";
 import { toast } from "sonner";
-import { Ban, Building2, Loader2, Plus, ShieldAlert, ShieldCheck, UserCog, UserPlus, Users } from "lucide-react";
+import { Ban, Building2, HardDrive, Loader2, Plus, ShieldAlert, ShieldCheck, UserCog, UserPlus, Users } from "lucide-react";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -27,8 +27,11 @@ import {
   usePlatformAuditLog,
   useSetPlatformAdmin,
   useSetUserDisabled,
+  useUpdateCompanyStorageQuota,
+  type AdminCompany,
 } from "@/hooks/use-admin";
 import { ROLE_DESCRIPTIONS, ROLE_LABELS, PERMISSION_MATRIX } from "@/lib/permissions";
+import { formatBytes } from "@/lib/utils";
 import type { CompanyRole } from "@/types/database";
 
 const ROLES: CompanyRole[] = ["owner", "admin", "manager", "employee", "guest"];
@@ -189,6 +192,74 @@ function PeopleTab() {
   );
 }
 
+function StorageQuotaDialog({
+  company,
+  open,
+  onOpenChange,
+}: {
+  company: AdminCompany | null;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+}) {
+  const updateQuota = useUpdateCompanyStorageQuota();
+  const [gb, setGb] = useState("");
+
+  useEffect(() => {
+    if (company) setGb(String(Math.round(company.storage_quota_bytes / 1_000_000_000)));
+  }, [company]);
+
+  async function handleSave(e: React.FormEvent) {
+    e.preventDefault();
+    if (!company) return;
+    const parsed = Number(gb);
+    if (!Number.isFinite(parsed) || parsed <= 0) {
+      toast.error("Enter a storage limit greater than 0 GB");
+      return;
+    }
+    try {
+      await updateQuota.mutateAsync({ companyId: company.id, quotaBytes: Math.round(parsed * 1_000_000_000) });
+      toast.success(`Storage limit for ${company.name} updated to ${parsed} GB`);
+      onOpenChange(false);
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Could not update storage limit");
+    }
+  }
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>Storage limit — {company?.name}</DialogTitle>
+        </DialogHeader>
+        <form onSubmit={handleSave} className="flex flex-col gap-4">
+          <div className="flex flex-col gap-1.5">
+            <Label htmlFor="storage-gb">Limit (GB)</Label>
+            <Input
+              id="storage-gb"
+              type="number"
+              min={1}
+              step={1}
+              required
+              value={gb}
+              onChange={(e) => setGb(e.target.value)}
+            />
+            <p className="text-xs text-muted-foreground">
+              Currently {company ? formatBytes(company.storage_quota_bytes) : "—"}. No billing plans here — set
+              whatever this company actually needs.
+            </p>
+          </div>
+          <DialogFooter>
+            <Button type="submit" disabled={updateQuota.isPending}>
+              {updateQuota.isPending && <Loader2 className="animate-spin" />}
+              Save
+            </Button>
+          </DialogFooter>
+        </form>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
 function CompaniesTab() {
   const { user } = useAuth();
   const { data: companies, isLoading } = useAllCompanies();
@@ -197,6 +268,7 @@ function CompaniesTab() {
   const [createOpen, setCreateOpen] = useState(false);
   const [name, setName] = useState("");
   const [industry, setIndustry] = useState("");
+  const [quotaCompany, setQuotaCompany] = useState<AdminCompany | null>(null);
 
   async function handleCreate(e: React.FormEvent) {
     e.preventDefault();
@@ -243,9 +315,13 @@ function CompaniesTab() {
               <div className="min-w-0 flex-1">
                 <p className="truncate text-sm font-medium">{c.name}</p>
                 <p className="truncate text-xs text-muted-foreground">
-                  {c.industry ?? "No industry set"} · {c.member_count} member{c.member_count === 1 ? "" : "s"}
+                  {c.industry ?? "No industry set"} · {c.member_count} member{c.member_count === 1 ? "" : "s"} ·{" "}
+                  {formatBytes(c.storage_quota_bytes)} storage limit
                 </p>
               </div>
+              <Button variant="outline" size="sm" onClick={() => setQuotaCompany(c)}>
+                <HardDrive className="size-3.5" /> Storage limit
+              </Button>
               <Button variant="outline" size="sm" asChild>
                 <a href={`/w/${c.slug}/settings/members`}>Manage members</a>
               </Button>
@@ -253,6 +329,12 @@ function CompaniesTab() {
           ))}
         </div>
       )}
+
+      <StorageQuotaDialog
+        company={quotaCompany}
+        open={!!quotaCompany}
+        onOpenChange={(open) => !open && setQuotaCompany(null)}
+      />
 
       <Dialog open={createOpen} onOpenChange={setCreateOpen}>
         <DialogContent>

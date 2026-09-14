@@ -66,6 +66,19 @@ model (no public signup, admin-provisioned accounts and companies only).
 - **Settings**: company profile, member management + invitations, role
   changes, security policy toggles, audit log viewer + export. No
   billing/plan gating — every module is available to every company.
+  Platform admins can set each company's storage limit directly
+  (Administration → Companies → Storage limit) — the flat 5 GB default
+  from this app's original plan-gated design is gone; new companies now
+  start at 500 GB and any admin can raise or lower it per company with
+  no billing tier in the way.
+- **Dashboards — customizing the shared one**: fixed a real bug where
+  every employee saw working "Add widget"/remove controls on the
+  shared company dashboard, but only managers/admins/owners could
+  actually save a change — the UI's permission check didn't match the
+  database's. A manager+ (which includes platform admins acting in a
+  company they belong to) can now actually customize the dashboard
+  everyone in the company sees; other roles no longer see controls
+  that silently fail.
 
 ## Explicitly deferred (and why)
 

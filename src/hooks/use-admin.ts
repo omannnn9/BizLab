@@ -9,6 +9,7 @@ export interface AdminCompany {
   industry: string | null;
   created_at: string;
   member_count: number;
+  storage_quota_bytes: number;
 }
 
 export interface AuditLogEntry {
@@ -52,7 +53,7 @@ export function useAllCompanies() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("companies")
-        .select("id, name, slug, industry, created_at, company_members(count)")
+        .select("id, name, slug, industry, created_at, storage_quota_bytes, company_members(count)")
         .order("created_at", { ascending: true });
       if (error) throw error;
       return (data ?? []).map((c) => ({
@@ -83,6 +84,25 @@ export function useCreateCompany() {
         .single();
       if (error) throw error;
       return data;
+    },
+    onSuccess: () => void queryClient.invalidateQueries({ queryKey: ["admin-all-companies"] }),
+  });
+}
+
+/** Direct table update, not an RPC: the "owners and admins can update
+ * company" RLS policy already resolves a platform admin to 'owner' on
+ * every company (current_role_in, 0022_internal_access_model.sql), so
+ * no SECURITY DEFINER bypass is needed here the way it is for the
+ * guarded profiles columns below. */
+export function useUpdateCompanyStorageQuota() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ companyId, quotaBytes }: { companyId: string; quotaBytes: number }) => {
+      const { error } = await supabase
+        .from("companies")
+        .update({ storage_quota_bytes: quotaBytes })
+        .eq("id", companyId);
+      if (error) throw error;
     },
     onSuccess: () => void queryClient.invalidateQueries({ queryKey: ["admin-all-companies"] }),
   });
