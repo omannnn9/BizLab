@@ -34,7 +34,7 @@ export function WorkspaceSwitcher() {
           </DropdownMenuItem>
         ))}
         <DropdownMenuSeparator />
-        <DropdownMenuItem onClick={() => navigate("/workspaces/new")}>
+        <DropdownMenuItem onClick={() => navigate("/workspaces")}>
           <Plus />
           New workspace
         </DropdownMenuItem>

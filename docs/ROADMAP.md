@@ -1,5 +1,72 @@
 # BizLab — Implementation Roadmap
 
+## Product & design reimagining — Phase 1 of N
+
+A full identity/IA/visual overhaul was requested: stop adding modules,
+redesign around workflows instead of CRUD screens, make BizLab feel like
+"the digital headquarters of OD Holdings" instead of a generic SaaS
+dashboard. That is a multi-week effort, not a single pass — this is the
+foundation phase, done for real (not a mockup), with the rest staged
+honestly rather than rushed or faked.
+
+**Shipped:**
+- **A real design system, not default shadcn.** The old primary color
+  was indigo-500 — the single most default "didn't decide" hue in SaaS.
+  Replaced with a deliberate signal-teal identity (already validated in
+  the Login/Dashboard/Admin design exploration, now actually wired into
+  every token instead of staying a mockup). Three-face type system —
+  Archivo for anything that should read as a heading or a big number,
+  IBM Plex Sans as the dense-UI workhorse, IBM Plex Mono wherever digits
+  line up — replacing "Inter", which, it turns out, was never actually
+  loaded anywhere (no `@font-face`, no link tag) and had been silently
+  falling back to the OS default the entire time. Motion tokens (a
+  considered ease-out, not Tailwind's default) applied globally so every
+  existing `transition-*` utility already in the app picks it up
+  automatically. The sidebar is now deliberately dark in both themes —
+  brand chrome, not a content surface that should flip with light/dark.
+- **New information architecture.** Home, My Work, and Companies are now
+  real, separate, first-class destinations instead of one undifferentiated
+  "Dashboard." Work and Collaboration are grouped explicitly in the nav.
+  Command Center is a new platform-admin-only cross-company view.
+- **Home, reinvented.** Was a configurable widget grid; is now a
+  greeting, Today's Focus (what's actually due or overdue for *you*,
+  not the whole company), Upcoming Deadlines, Recent Activity, and
+  Active Projects — all real queries, nothing decorative. The old
+  configurable-widgets dashboard (personal dashboards, quick links,
+  drag-to-reorder) still exists and still works — it's the "Dashboards"
+  link, not deleted, just no longer the front door.
+- **My Work**: Today / This Week / Waiting on Others / Recently
+  Completed, genuinely scoped to the signed-in viewer. Building this
+  surfaced a real, pre-existing bug: the old "My tasks" dashboard stat
+  counted *every open task in the company* for *every viewer* — it had
+  no assignee filter at all. Fixed at the source (`useDashboardStats`).
+- **Companies hub**: every company you belong to, with real project and
+  open-task counts (grouped queries, not N+1), not just a name in a
+  dropdown.
+- **Command Center**: portfolio-wide rollup for platform admins — company
+  health (completion rate, open/overdue tasks per company) and critical
+  deadlines across every company, all real. "Strategic initiatives,"
+  "major risks," and "open decisions" were part of the original ask but
+  have no backing data model at all — deliberately not faked here; see
+  Phase 2.
+- Fixed a dead link found along the way: the workspace switcher's "New
+  workspace" pointed at a route that never existed.
+
+**Explicitly not done yet** (this was always going to be staged):
+- Company home pages (Mission / Objectives / Roadmap / KPIs / Recent
+  Decisions) — needs new data modeling (none of those are entities
+  today), not just UI.
+- Projects as the true center of execution (tasks/docs/files/whiteboards
+  embedded in one project view instead of separate top-level modules).
+- Document, File, Chat, and Whiteboard experience redesigns (Notion-level
+  writing comfort, file relationship context, chat→task conversion,
+  richer whiteboard templates).
+- Strategic initiatives / risks / decisions tracking (new tables).
+- A full empty-state rewrite across every module (Home/My Work got real
+  ones; the rest still show generic "No X yet").
+- Broader motion pass (page transitions, workspace switching, modals) —
+  only the token-level foundation (global transition timing) is in.
+
 ## What's built today (this repository)
 
 A working, deployable internal platform for OD Holdings and its

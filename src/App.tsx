@@ -22,6 +22,12 @@ import { WorkspacePicker } from "@/pages/onboarding/workspace-picker";
 // whiteboard canvas) accounted for most of the original 811 KB single
 // bundle; auth/onboarding stay eager since they're the actual first
 // paint for a signed-out visitor and are small on their own.
+const WorkspaceHomePage = lazy(() => import("@/pages/dashboard/home-page").then((m) => ({ default: m.HomePage })));
+const MyWorkPage = lazy(() => import("@/pages/dashboard/my-work-page").then((m) => ({ default: m.MyWorkPage })));
+const CompaniesPage = lazy(() => import("@/pages/dashboard/companies-page").then((m) => ({ default: m.CompaniesPage })));
+const CommandCenterPage = lazy(() =>
+  import("@/pages/dashboard/command-center-page").then((m) => ({ default: m.CommandCenterPage }))
+);
 const DashboardPage = lazy(() => import("@/pages/dashboard/dashboard-page").then((m) => ({ default: m.DashboardPage })));
 const TasksPage = lazy(() => import("@/pages/tasks/tasks-page").then((m) => ({ default: m.TasksPage })));
 const ProjectsPage = lazy(() => import("@/pages/projects/projects-page").then((m) => ({ default: m.ProjectsPage })));
@@ -99,7 +105,11 @@ export default function App() {
                           </WorkspaceProvider>
                         }
                       >
-                        <Route index element={<DashboardPage />} />
+                        <Route index element={<WorkspaceHomePage />} />
+                        <Route path="my-work" element={<MyWorkPage />} />
+                        <Route path="companies" element={<CompaniesPage />} />
+                        <Route path="command-center" element={<CommandCenterPage />} />
+                        <Route path="dashboards" element={<DashboardPage />} />
                         <Route path="tasks" element={<TasksPage />} />
                         <Route path="projects" element={<ProjectsPage />} />
                         <Route path="projects/:projectId" element={<ProjectDetailPage />} />

@@ -180,16 +180,16 @@ export function useReorderWidgets(dashboardId: string | undefined) {
 }
 
 export function useDashboardStats() {
-  const { company } = useWorkspace();
+  const { company, membership } = useWorkspace();
   const { user } = useAuth();
 
   return useQuery({
-    queryKey: ["dashboard-stats", company?.id],
+    queryKey: ["dashboard-stats", company?.id, membership?.id],
     enabled: !!company,
     queryFn: async () => {
       const companyId = company!.id;
       const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
-      const [tasks, projects, files, activity, members, channels, recentMessages] = await Promise.all([
+      const [tasks, projects, files, activity, members, channels, recentMessages, myAssignments] = await Promise.all([
         supabase.from("tasks").select("id,status,priority,due_date,title,completed_at").eq("company_id", companyId),
         supabase.from("projects").select("id,name,status,color").eq("company_id", companyId).eq("is_archived", false),
         supabase.from("company_storage_usage").select("*").eq("company_id", companyId).maybeSingle(),
@@ -209,6 +209,11 @@ export function useDashboardStats() {
           .eq("chat_channels.company_id", companyId)
           .is("deleted_at", null)
           .gte("created_at", sevenDaysAgo),
+        // Scoped to the viewer's own member row — see the note on
+        // myOpenTasks below for why this exists as its own query.
+        membership
+          ? supabase.from("task_assignees").select("task_id").eq("member_id", membership.id)
+          : Promise.resolve({ data: [] as { task_id: string }[] }),
       ]);
 
       const messageCountByChannel = new Map<string, number>();
@@ -219,13 +224,19 @@ export function useDashboardStats() {
         .map((c) => ({ id: c.id, name: c.name ?? "Unnamed", messageCount: messageCountByChannel.get(c.id) ?? 0 }))
         .sort((a, b) => b.messageCount - a.messageCount);
 
+      const myTaskIds = new Set((myAssignments.data ?? []).map((a) => a.task_id));
+
       return {
         tasks: tasks.data ?? [],
         projects: projects.data ?? [],
         storage: files.data ?? { used_bytes: 0, file_count: 0 },
         activity: activity.data ?? [],
         memberCount: members.data?.length ?? 0,
-        myOpenTasks: (tasks.data ?? []).filter((t) => t.status !== "done" && t.status !== "cancelled").length,
+        // Was every open task in the company, for every viewer — never
+        // actually filtered by assignee. Now genuinely "assigned to me".
+        myOpenTasks: (tasks.data ?? []).filter(
+          (t) => myTaskIds.has(t.id) && t.status !== "done" && t.status !== "cancelled"
+        ).length,
         currentUserId: user?.id,
         channelActivity,
       };
