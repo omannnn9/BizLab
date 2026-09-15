@@ -1,10 +1,18 @@
 import { useState } from "react";
 import { formatDistanceToNow } from "date-fns";
-import { File as FileIcon, MessageSquare, Pencil, SmilePlus, Trash2 } from "lucide-react";
+import {
+  CheckSquare,
+  File as FileIcon,
+  MessageSquare,
+  Pencil,
+  SmilePlus,
+  Trash2,
+} from "lucide-react";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { TaskDialog } from "@/components/tasks/task-dialog";
 import { cn, formatBytes } from "@/lib/utils";
 import { useAuth } from "@/hooks/use-auth";
 import { useWorkspace } from "@/hooks/use-workspace";
@@ -46,11 +54,13 @@ function AttachmentChip({ attachment }: { attachment: ChatMessageWithReactions["
 export function MessageItem({
   message,
   channelId,
+  channelName,
   replyCount,
   onOpenThread,
 }: {
   message: ChatMessageWithReactions;
   channelId: string;
+  channelName?: string;
   replyCount?: number;
   onOpenThread?: () => void;
 }) {
@@ -62,6 +72,7 @@ export function MessageItem({
 
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState(message.body ?? "");
+  const [taskDialogOpen, setTaskDialogOpen] = useState(false);
 
   const isOwn = message.author_id === user?.id;
   const isDeleted = !!message.deleted_at;
@@ -76,6 +87,12 @@ export function MessageItem({
     await editMessage.mutateAsync({ id: message.id, body: draft });
     setEditing(false);
   }
+
+  const taskTitle = (message.body ?? "").split("\n")[0].slice(0, 120) || "Follow up from chat";
+  const taskDescription = [
+    `From ${channelName ? `#${channelName}` : "chat"} — ${message.author?.full_name ?? message.author?.email ?? "Someone"}, ${formatDistanceToNow(new Date(message.created_at), { addSuffix: true })}`,
+    message.body ? `\n${message.body}` : "",
+  ].join("");
 
   return (
     <div className="group flex gap-2.5">
@@ -155,6 +172,15 @@ export function MessageItem({
               <MessageSquare className="size-3.5" />
             </Button>
           )}
+          <Button
+            variant="ghost"
+            size="icon"
+            className="size-7"
+            title="Convert to task"
+            onClick={() => setTaskDialogOpen(true)}
+          >
+            <CheckSquare className="size-3.5" />
+          </Button>
           <Popover>
             <PopoverTrigger asChild>
               <Button variant="ghost" size="icon" className="size-7">
@@ -191,6 +217,15 @@ export function MessageItem({
             </>
           )}
         </div>
+      )}
+
+      {taskDialogOpen && (
+        <TaskDialog
+          open={taskDialogOpen}
+          onOpenChange={setTaskDialogOpen}
+          defaultTitle={taskTitle}
+          defaultDescription={taskDescription}
+        />
       )}
     </div>
   );

@@ -11,12 +11,14 @@ export function ThreadPanel({
   parentMessage,
   replies,
   channelId,
+  channelName,
   open,
   onOpenChange,
 }: {
   parentMessage: ChatMessageWithReactions | null;
   replies: ChatMessageWithReactions[];
   channelId: string;
+  channelName?: string;
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }) {
@@ -46,10 +48,10 @@ export function ThreadPanel({
               </p>
             </div>
             <div className="flex-1 space-y-4 overflow-y-auto p-4">
-              <MessageItem message={parentMessage} channelId={channelId} />
+              <MessageItem message={parentMessage} channelId={channelId} channelName={channelName} />
               {replies.length > 0 && <div className="border-t" />}
               {replies.map((reply) => (
-                <MessageItem key={reply.id} message={reply} channelId={channelId} />
+                <MessageItem key={reply.id} message={reply} channelId={channelId} channelName={channelName} />
               ))}
             </div>
             <form onSubmit={handleSend} className="flex gap-2 border-t p-3">

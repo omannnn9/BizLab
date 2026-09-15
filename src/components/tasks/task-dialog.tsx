@@ -37,12 +37,16 @@ export function TaskDialog({
   task,
   defaultProjectId,
   defaultStatus,
+  defaultTitle,
+  defaultDescription,
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   task?: Task;
   defaultProjectId?: string;
   defaultStatus?: TaskStatus;
+  defaultTitle?: string;
+  defaultDescription?: string;
 }) {
   const { data: projects } = useProjects();
   const { data: members } = useCompanyMembers();
@@ -61,15 +65,15 @@ export function TaskDialog({
 
   useEffect(() => {
     if (open) {
-      setTitle(task?.title ?? "");
-      setDescription(task?.description ?? "");
+      setTitle(task?.title ?? defaultTitle ?? "");
+      setDescription(task?.description ?? defaultDescription ?? "");
       setProjectId(task?.project_id ?? defaultProjectId ?? "none");
       setStatus(task?.status ?? defaultStatus ?? "todo");
       setPriority(task?.priority ?? "none");
       setDueDate(task?.due_date ?? "");
       setAssigneeIds(task?.assignees?.map((a) => a.id) ?? []);
     }
-  }, [open, task, defaultProjectId, defaultStatus]);
+  }, [open, task, defaultProjectId, defaultStatus, defaultTitle, defaultDescription]);
 
   const saving = createTask.isPending || updateTask.isPending || setAssignees.isPending;
 

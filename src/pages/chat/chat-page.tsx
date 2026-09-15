@@ -195,6 +195,7 @@ export function ChatPage() {
               key={m.id}
               message={m}
               channelId={activeChannelId!}
+              channelName={activeChannel?.name ?? undefined}
               replyCount={repliesByParent.get(m.id)?.length}
               onOpenThread={() => setActiveThreadId(m.id)}
             />
@@ -270,6 +271,7 @@ export function ChatPage() {
         parentMessage={activeThreadParent}
         replies={activeThreadReplies}
         channelId={activeChannelId!}
+        channelName={activeChannel?.name ?? undefined}
         open={!!activeThreadId}
         onOpenChange={(open) => !open && setActiveThreadId(null)}
       />
