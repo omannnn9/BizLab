@@ -65,7 +65,11 @@ export function RichTextEditor({
     editorProps: {
       attributes: {
         class:
-          "prose prose-sm max-w-none focus:outline-none dark:prose-invert prose-headings:font-semibold prose-p:my-2 min-h-32",
+          "prose prose-base max-w-none focus:outline-none dark:prose-invert " +
+          "prose-headings:font-display prose-headings:font-semibold prose-headings:tracking-tight " +
+          "prose-p:leading-7 prose-p:my-3 prose-li:my-1 prose-blockquote:font-normal " +
+          "prose-blockquote:not-italic prose-blockquote:border-l-2 prose-blockquote:border-primary/40 " +
+          "min-h-32",
       },
     },
     onUpdate: ({ editor }) => onChange(editor.getJSON()),
@@ -91,7 +95,7 @@ export function RichTextEditor({
   return (
     <div className="flex flex-col gap-2">
       {!readOnly && (
-        <div className="flex flex-wrap items-center gap-0.5 rounded-md border bg-muted/30 p-1">
+        <div className="sticky top-0 z-10 flex flex-wrap items-center gap-0.5 rounded-lg border bg-card/95 p-1 shadow-sm backdrop-blur">
           <ToolbarButton
             active={editor.isActive("bold")}
             onClick={() => editor.chain().focus().toggleBold().run()}

@@ -132,20 +132,20 @@ export function DocumentEditorPage() {
             </Button>
           </div>
         </div>
-        <div className="mx-auto max-w-3xl px-8 py-10">
+        <div className="mx-auto max-w-3xl px-8 py-14 sm:px-10">
           <input
             value={title}
             onChange={(e) => setTitle(e.target.value)}
             placeholder="Untitled"
-            className="w-full border-none bg-transparent text-3xl font-bold tracking-tight outline-none placeholder:text-muted-foreground"
+            className="font-display w-full border-none bg-transparent text-4xl font-semibold tracking-tight outline-none placeholder:text-muted-foreground/50"
           />
-          <div className="mt-6">
+          <div className="mt-8">
             <RichTextEditor content={content} onChange={setContent} />
           </div>
 
-          <div className="mt-10 border-t pt-4">
-            <div className="mb-2 flex items-center justify-between">
-              <p className="text-xs font-medium text-muted-foreground">Sub-pages</p>
+          <div className="mt-14 border-t pt-5">
+            <div className="mb-3 flex items-center justify-between">
+              <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">Sub-pages</p>
               <Button
                 variant="ghost"
                 size="sm"

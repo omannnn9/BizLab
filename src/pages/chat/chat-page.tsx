@@ -1,10 +1,11 @@
 import { useEffect, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { Hash, Paperclip, Plus, Send, X } from "lucide-react";
+import { Hash, MessagesSquare, Paperclip, Plus, Send, X } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
+import { EmptyState } from "@/components/shared/empty-state";
 import { cn, formatBytes } from "@/lib/utils";
 import { useWorkspace } from "@/hooks/use-workspace";
 import { useChannels, useCreateChannel } from "@/hooks/use-channels";
@@ -199,7 +200,15 @@ export function ChatPage() {
             />
           ))}
           {(!topLevelMessages || topLevelMessages.length === 0) && (
-            <p className="text-sm text-muted-foreground">No messages yet. Say hello 👋</p>
+            <EmptyState
+              icon={MessagesSquare}
+              title="No messages yet"
+              description={
+                activeChannel?.name
+                  ? `Start the conversation in #${activeChannel.name}.`
+                  : "Start the conversation."
+              }
+            />
           )}
         </div>
 
