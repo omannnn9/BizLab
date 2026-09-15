@@ -53,6 +53,13 @@ honestly rather than rushed or faked.
   workspace" pointed at a route that never existed.
 
 **Phase 2, started:**
+- **Chat → task conversion.** Every chat message now has a "Convert to
+  task" action (in both the main channel view and the thread panel)
+  that opens the task dialog pre-filled with the message as the title
+  and a description backlinking to the channel, author, and when it
+  was sent. No new schema — tasks already existed — this was purely a
+  missing affordance, one of the explicit "make chat feel native"
+  asks.
 - **Chat's empty state**, the one place left with an emoji standing in
   for real design ("No messages yet. Say hello 👋"), now uses the same
   `EmptyState` component as the rest of the app, with copy that names
@@ -78,8 +85,7 @@ honestly rather than rushed or faked.
   and comments anchored to a text selection (comments are page-level
   today) — the typography pass above is legibility, not the full
   Notion-grade editing model.
-- File relationship context, chat→task conversion, richer whiteboard
-  templates.
+- File relationship context, richer whiteboard templates.
 - Strategic initiatives / risks / decisions tracking (new tables).
 - A full empty-state rewrite across every module (Home, My Work, and
   now Chat got real ones; most of the rest still show a plain "No X
