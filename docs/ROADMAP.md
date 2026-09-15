@@ -52,20 +52,45 @@ honestly rather than rushed or faked.
 - Fixed a dead link found along the way: the workspace switcher's "New
   workspace" pointed at a route that never existed.
 
+**Phase 2, started:**
+- **Chat's empty state**, the one place left with an emoji standing in
+  for real design ("No messages yet. Say hello 👋"), now uses the same
+  `EmptyState` component as the rest of the app, with copy that names
+  the actual channel.
+- **Document writing comfort**: the shared Tiptap editor (Documents and
+  Knowledge both use it) was rendering at `prose-sm` — 14px, tight
+  leading, no real heading or blockquote treatment. Now reads at a real
+  body size with relaxed paragraph leading, display-face headings, and
+  a proper blockquote rule instead of prose defaults. The toolbar is
+  sticky with a soft elevated surface instead of a flat bar that
+  scrolls away. Title input moved to the display face with more
+  breathing room above it. Still not Notion-level (no slash commands,
+  no inline block drag handles, no comment anchoring to text ranges)
+  — that's a bigger lift, tracked below.
+
 **Explicitly not done yet** (this was always going to be staged):
 - Company home pages (Mission / Objectives / Roadmap / KPIs / Recent
   Decisions) — needs new data modeling (none of those are entities
   today), not just UI.
 - Projects as the true center of execution (tasks/docs/files/whiteboards
   embedded in one project view instead of separate top-level modules).
-- Document, File, Chat, and Whiteboard experience redesigns (Notion-level
-  writing comfort, file relationship context, chat→task conversion,
-  richer whiteboard templates).
+- Document editor still lacks slash commands, drag-to-reorder blocks,
+  and comments anchored to a text selection (comments are page-level
+  today) — the typography pass above is legibility, not the full
+  Notion-grade editing model.
+- File relationship context, chat→task conversion, richer whiteboard
+  templates.
 - Strategic initiatives / risks / decisions tracking (new tables).
-- A full empty-state rewrite across every module (Home/My Work got real
-  ones; the rest still show generic "No X yet").
+- A full empty-state rewrite across every module (Home, My Work, and
+  now Chat got real ones; most of the rest still show a plain "No X
+  yet" line — sub-page lists, comment threads, and version history are
+  intentionally left as terse inline text, not full EmptyState blocks,
+  since that component is sized for whole-section empty states, not a
+  two-line list under a header).
 - Broader motion pass (page transitions, workspace switching, modals) —
-  only the token-level foundation (global transition timing) is in.
+  the token-level foundation (global transition timing) is in, and
+  Dialog already animates in/out with fade+zoom; nothing beyond that
+  has been reviewed yet.
 
 ## What's built today (this repository)
 
