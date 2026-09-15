@@ -85,7 +85,14 @@ export function useCreateCompany() {
       if (error) throw error;
       return data;
     },
-    onSuccess: () => void queryClient.invalidateQueries({ queryKey: ["admin-all-companies"] }),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: ["admin-all-companies"] });
+      // The creator is added as owner by seed_company_defaults()
+      // immediately, so their own workspace list is stale the instant
+      // this resolves — matters when creating from the workspace
+      // picker, which navigates straight into the new company.
+      void queryClient.invalidateQueries({ queryKey: ["my-companies"] });
+    },
   });
 }
 

@@ -13,7 +13,11 @@ model (no public signup, admin-provisioned accounts and companies only).
 - **Admin-only access model**: no public signup; a platform admin
   creates companies and invites every user via a real Supabase Auth
   invite email (Edge Function `invite-user`); disabled users lose all
-  data access immediately via RLS, not just a UI hide.
+  data access immediately via RLS, not just a UI hide. A platform admin
+  can create a new company workspace directly from the workspace
+  picker (`/workspaces`), not just buried in Administration → Companies
+  — the picker no longer auto-skips past itself for an admin with only
+  one membership, so "Create workspace" stays reachable.
 - **Tasks & Projects**: full CRUD, List/Kanban/Calendar/**Timeline
   (Gantt)** views, drag-and-drop status changes, delegation (assignees),
   priorities, due dates, comments, milestones, project progress
@@ -78,7 +82,14 @@ model (no public signup, admin-provisioned accounts and companies only).
   database's. A manager+ (which includes platform admins acting in a
   company they belong to) can now actually customize the dashboard
   everyone in the company sees; other roles no longer see controls
-  that silently fail.
+  that silently fail. Personal dashboards can now be deleted (there
+  was no delete path at all before — create-only). Widget cards got a
+  real visual pass: a tone-colored icon chip per widget type, bold
+  tabular-numeral stats, urgency-colored deadline badges (overdue /
+  due today / due soon), a usage-colored storage meter, avatars on
+  the activity feed, and a proper empty state — the plain
+  icon-less/color-less cards read as noticeably flatter than the rest
+  of the app.
 
 ## Explicitly deferred (and why)
 

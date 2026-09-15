@@ -91,6 +91,23 @@ export function useCreateDashboard() {
   });
 }
 
+/** RLS ("owner or managers delete dashboards", 0008_dashboards.sql)
+ * refuses to delete the shared default dashboard even for an owner —
+ * `and not is_default` in the policy — so this only ever removes a
+ * personal one. */
+export function useDeleteDashboard() {
+  const { company } = useWorkspace();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from("dashboards").delete().eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => void queryClient.invalidateQueries({ queryKey: ["dashboards", company?.id] }),
+  });
+}
+
 export function useAddWidget(dashboardId: string | undefined) {
   const queryClient = useQueryClient();
 
