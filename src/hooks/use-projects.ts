@@ -22,6 +22,34 @@ export function useProjects() {
   });
 }
 
+/** Task completion counts per project, in one grouped query rather than
+ * N+1 — used by the projects list to show real progress on each card. */
+export function useProjectTaskCounts() {
+  const { company } = useWorkspace();
+  return useQuery({
+    queryKey: ["project-task-counts", company?.id],
+    enabled: !!company,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("tasks")
+        .select("project_id, status")
+        .eq("company_id", company!.id)
+        .not("project_id", "is", null);
+      if (error) throw error;
+
+      const counts = new Map<string, { done: number; total: number }>();
+      for (const row of data ?? []) {
+        const projectId = row.project_id as string;
+        const entry = counts.get(projectId) ?? { done: 0, total: 0 };
+        entry.total += 1;
+        if (row.status === "done") entry.done += 1;
+        counts.set(projectId, entry);
+      }
+      return counts;
+    },
+  });
+}
+
 export function useProject(projectId: string | undefined) {
   return useQuery({
     queryKey: ["project", projectId],
