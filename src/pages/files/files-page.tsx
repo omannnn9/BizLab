@@ -3,9 +3,11 @@ import { useNavigate } from "react-router-dom";
 import {
   Download,
   File as FileIcon,
-  Folder,
+  Folder as FolderIcon,
   FolderPlus,
   Image as ImageIcon,
+  Lock,
+  Share2,
   Trash2,
   Upload,
   Video,
@@ -14,15 +16,33 @@ import { toast } from "sonner";
 import { PageHeader } from "@/components/shared/page-header";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Badge } from "@/components/ui/badge";
 import { formatBytes, cn } from "@/lib/utils";
 import { Skeleton } from "@/components/ui/skeleton";
 import { EmptyState } from "@/components/shared/empty-state";
-import { useCreateFolder, useFolders } from "@/hooks/use-folders";
-import { useDeleteFile, useFiles, useUploadFile, getFileDownloadUrl } from "@/hooks/use-files";
+import { ShareDialog } from "@/components/files/share-dialog";
+import {
+  useCreateFolder,
+  useFolders,
+  useFolderShares,
+  useRevokeFolderShare,
+  useShareFolder,
+  useUpdateFolderVisibility,
+} from "@/hooks/use-folders";
+import {
+  useDeleteFile,
+  useFiles,
+  useFileShares,
+  useRevokeFileShare,
+  useShareFile,
+  useUpdateFileVisibility,
+  useUploadFile,
+  getFileDownloadUrl,
+} from "@/hooks/use-files";
 import { useWorkspace } from "@/hooks/use-workspace";
 import { useAuth } from "@/hooks/use-auth";
 import { usePermissions } from "@/hooks/use-permissions";
-import type { FileObject } from "@/types/database";
+import type { FileObject, Folder } from "@/types/database";
 
 function iconFor(mimeType: string | null) {
   if (mimeType?.startsWith("image/")) return ImageIcon;
@@ -30,11 +50,103 @@ function iconFor(mimeType: string | null) {
   return FileIcon;
 }
 
+function FileAccessDialog({
+  file,
+  open,
+  onOpenChange,
+}: {
+  file: FileObject;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+}) {
+  const { data: shares, isLoading: sharesLoading } = useFileShares(file.id);
+  const updateVisibility = useUpdateFileVisibility();
+  const shareFile = useShareFile(file.id);
+  const revokeShare = useRevokeFileShare(file.id);
+  const [revokingId, setRevokingId] = useState<string | null>(null);
+
+  async function handleRevoke(shareId: string) {
+    setRevokingId(shareId);
+    try {
+      await revokeShare.mutateAsync(shareId);
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Could not revoke access");
+    } finally {
+      setRevokingId(null);
+    }
+  }
+
+  return (
+    <ShareDialog
+      open={open}
+      onOpenChange={onOpenChange}
+      itemName={file.name}
+      itemKind="file"
+      visibility={file.visibility}
+      onUpdateVisibility={(v) => updateVisibility.mutate({ fileId: file.id, visibility: v })}
+      updatingVisibility={updateVisibility.isPending}
+      shares={shares ?? []}
+      sharesLoading={sharesLoading}
+      onShare={(email, accessLevel) => shareFile.mutateAsync({ email, accessLevel })}
+      sharing={shareFile.isPending}
+      onRevoke={(id) => void handleRevoke(id)}
+      revokingId={revokingId}
+    />
+  );
+}
+
+function FolderAccessDialog({
+  folder,
+  open,
+  onOpenChange,
+}: {
+  folder: Folder;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+}) {
+  const { data: shares, isLoading: sharesLoading } = useFolderShares(folder.id);
+  const updateVisibility = useUpdateFolderVisibility("files");
+  const shareFolder = useShareFolder(folder.id);
+  const revokeShare = useRevokeFolderShare(folder.id);
+  const [revokingId, setRevokingId] = useState<string | null>(null);
+
+  async function handleRevoke(shareId: string) {
+    setRevokingId(shareId);
+    try {
+      await revokeShare.mutateAsync(shareId);
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Could not revoke access");
+    } finally {
+      setRevokingId(null);
+    }
+  }
+
+  return (
+    <ShareDialog
+      open={open}
+      onOpenChange={onOpenChange}
+      itemName={folder.name}
+      itemKind="folder"
+      visibility={folder.visibility}
+      onUpdateVisibility={(v) => updateVisibility.mutate({ folderId: folder.id, visibility: v })}
+      updatingVisibility={updateVisibility.isPending}
+      shares={shares ?? []}
+      sharesLoading={sharesLoading}
+      onShare={(email, accessLevel) => shareFolder.mutateAsync({ email, accessLevel })}
+      sharing={shareFolder.isPending}
+      onRevoke={(id) => void handleRevoke(id)}
+      revokingId={revokingId}
+    />
+  );
+}
+
 export function FilesPage() {
   const [folderId, setFolderId] = useState<string | null>(null);
   const [dragActive, setDragActive] = useState(false);
   const [newFolderName, setNewFolderName] = useState("");
   const [addingFolder, setAddingFolder] = useState(false);
+  const [shareFileId, setShareFileId] = useState<string | null>(null);
+  const [shareFolderId, setShareFolderId] = useState<string | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const { company } = useWorkspace();
   const { user } = useAuth();
@@ -47,10 +159,24 @@ export function FilesPage() {
   const uploadFile = useUploadFile(folderId);
   const deleteFile = useDeleteFile();
 
+  // Looked up by id (not held as a snapshot) so the dialog reflects the
+  // latest visibility/shares after a mutation invalidates these queries.
+  const shareFileTarget = files?.find((f) => f.id === shareFileId) ?? null;
+  const shareFolderTarget = folders?.find((f) => f.id === shareFolderId) ?? null;
+
   // Mirrors the "uploader or managers delete files" RLS policy — the
   // uploader can always delete their own upload; otherwise manager+.
   function canDeleteFile(file: FileObject) {
     return file.uploaded_by === user?.id || can("files", "delete");
+  }
+
+  // Who can restrict/share an item — uploader/creator, or manager+
+  // (mirrors the file_shares/folder_shares insert RLS policies).
+  function canManageFile(file: FileObject) {
+    return file.uploaded_by === user?.id || can("files", "manage");
+  }
+  function canManageFolder(folder: Folder) {
+    return folder.created_by === user?.id || can("files", "manage");
   }
 
   async function handleDelete(file: FileObject) {
@@ -94,20 +220,33 @@ export function FilesPage() {
             folderId === null ? "bg-accent font-medium" : "hover:bg-accent"
           )}
         >
-          <Folder className="size-4" /> All files
+          <FolderIcon className="size-4" /> All files
         </button>
         <div className="mt-1 flex flex-col gap-0.5">
           {folders?.map((f) => (
-            <button
-              key={f.id}
-              onClick={() => setFolderId(f.id)}
-              className={cn(
-                "flex items-center gap-2 rounded-md px-2 py-1.5 text-sm",
-                folderId === f.id ? "bg-accent font-medium" : "hover:bg-accent"
+            <div key={f.id} className="group flex items-center">
+              <button
+                onClick={() => setFolderId(f.id)}
+                className={cn(
+                  "flex min-w-0 flex-1 items-center gap-2 rounded-md px-2 py-1.5 text-sm",
+                  folderId === f.id ? "bg-accent font-medium" : "hover:bg-accent"
+                )}
+              >
+                <FolderIcon className="size-4 shrink-0" />
+                <span className="truncate">{f.name}</span>
+                {f.visibility === "restricted" && <Lock className="size-3 shrink-0 text-muted-foreground" />}
+              </button>
+              {canManageFolder(f) && (
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="size-6 shrink-0 opacity-0 group-hover:opacity-100"
+                  onClick={() => setShareFolderId(f.id)}
+                >
+                  <Share2 className="size-3.5" />
+                </Button>
               )}
-            >
-              <Folder className="size-4" /> {f.name}
-            </button>
+            </div>
           ))}
         </div>
         {addingFolder ? (
@@ -206,6 +345,11 @@ export function FilesPage() {
                           >
                             <Icon className="size-4 shrink-0 text-muted-foreground" />
                             {file.name}
+                            {file.visibility === "restricted" && (
+                              <Badge variant="outline" className="ml-1">
+                                <Lock className="size-3" /> Restricted
+                              </Badge>
+                            )}
                           </button>
                         </td>
                         <td className="px-4 py-2.5 text-muted-foreground">{formatBytes(file.file_size)}</td>
@@ -214,6 +358,16 @@ export function FilesPage() {
                         </td>
                         <td className="px-4 py-2.5">
                           <div className="flex justify-end gap-1">
+                            {canManageFile(file) && (
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="size-7"
+                                onClick={() => setShareFileId(file.id)}
+                              >
+                                <Share2 className="size-3.5" />
+                              </Button>
+                            )}
                             <Button
                               variant="ghost"
                               size="icon"
@@ -255,6 +409,21 @@ export function FilesPage() {
           )}
         </div>
       </div>
+
+      {shareFileTarget && (
+        <FileAccessDialog
+          file={shareFileTarget}
+          open={!!shareFileTarget}
+          onOpenChange={(open) => !open && setShareFileId(null)}
+        />
+      )}
+      {shareFolderTarget && (
+        <FolderAccessDialog
+          folder={shareFolderTarget}
+          open={!!shareFolderTarget}
+          onOpenChange={(open) => !open && setShareFolderId(null)}
+        />
+      )}
     </div>
   );
 }

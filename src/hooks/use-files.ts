@@ -4,7 +4,7 @@ import { useAuth } from "@/hooks/use-auth";
 import { useWorkspace } from "@/hooks/use-workspace";
 import { sanitizeFileName, validateFile } from "@/lib/file-policy";
 import { formatBytes } from "@/lib/utils";
-import type { FileObject } from "@/types/database";
+import type { FileAccessLevel, FileObject, FileShare, ItemVisibility } from "@/types/database";
 
 const BUCKET = "company-files";
 
@@ -153,4 +153,92 @@ export async function getFileDownloadUrl(storagePath: string, expiresInSeconds =
   const { data, error } = await supabase.storage.from(BUCKET).createSignedUrl(storagePath, expiresInSeconds);
   if (error) throw error;
   return data.signedUrl;
+}
+
+export function useFileShares(fileId: string | undefined) {
+  return useQuery({
+    queryKey: ["file-shares", fileId],
+    enabled: !!fileId,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("file_shares")
+        .select("*, member:company_members(*, profile:profiles!company_members_user_id_fkey(*))")
+        .eq("file_id", fileId!)
+        .order("created_at", { ascending: true });
+      if (error) throw error;
+      return (data ?? []) as FileShare[];
+    },
+  });
+}
+
+export function useUpdateFileVisibility() {
+  const { company } = useWorkspace();
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ fileId, visibility }: { fileId: string; visibility: ItemVisibility }) => {
+      const { data, error } = await supabase.from("files").update({ visibility }).eq("id", fileId).select("id");
+      if (error) throw error;
+      if (!data || data.length === 0) throw new Error("You don't have permission to change this file's access.");
+    },
+    onSuccess: (_d, variables) => {
+      void queryClient.invalidateQueries({ queryKey: ["file", variables.fileId] });
+      void queryClient.invalidateQueries({ queryKey: ["files", company?.id] });
+    },
+  });
+}
+
+export function useShareFile(fileId: string) {
+  const { company } = useWorkspace();
+  const { user } = useAuth();
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ email, accessLevel }: { email: string; accessLevel: FileAccessLevel }) => {
+      const normalizedEmail = email.trim().toLowerCase();
+      const { data: targetProfile, error: profileError } = await supabase
+        .from("profiles")
+        .select("id")
+        .eq("email", normalizedEmail)
+        .maybeSingle();
+      if (profileError) throw profileError;
+      if (!targetProfile) {
+        throw new Error("No one with that email is a member of this company.");
+      }
+
+      const { data: member, error: memberError } = await supabase
+        .from("company_members")
+        .select("id")
+        .eq("company_id", company!.id)
+        .eq("user_id", targetProfile.id)
+        .eq("status", "active")
+        .maybeSingle();
+      if (memberError) throw memberError;
+      if (!member) {
+        throw new Error("No one with that email is a member of this company.");
+      }
+
+      const { error } = await supabase.from("file_shares").upsert(
+        {
+          file_id: fileId,
+          member_id: member.id,
+          access_level: accessLevel,
+          created_by: user!.id,
+        },
+        { onConflict: "file_id,member_id" }
+      );
+      if (error) throw error;
+    },
+    onSuccess: () => void queryClient.invalidateQueries({ queryKey: ["file-shares", fileId] }),
+  });
+}
+
+export function useRevokeFileShare(fileId: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (shareId: string) => {
+      const { data, error } = await supabase.from("file_shares").delete().eq("id", shareId).select("id");
+      if (error) throw error;
+      if (!data || data.length === 0) throw new Error("You don't have permission to revoke this share.");
+    },
+    onSuccess: () => void queryClient.invalidateQueries({ queryKey: ["file-shares", fileId] }),
+  });
 }
