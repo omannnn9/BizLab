@@ -9,6 +9,7 @@ import {
   useChildDocuments,
   useCreateDocument,
   useDocument,
+  useMyDocumentAccessLevel,
   useSaveDocumentVersion,
   useUpdateDocument,
 } from "@/hooks/use-documents";
@@ -24,6 +25,7 @@ import type { JSONContent } from "@tiptap/react";
 export function DocumentEditorPage() {
   const { documentId } = useParams<{ documentId: string }>();
   const { data: document, isLoading, isError } = useDocument(documentId);
+  const { data: myAccessLevel } = useMyDocumentAccessLevel(documentId);
   const { data: parent } = useDocument(document?.parent_document_id ?? undefined);
   const { data: children } = useChildDocuments(documentId);
   const saveVersion = useSaveDocumentVersion(documentId);
@@ -113,9 +115,11 @@ export function DocumentEditorPage() {
             >
               {document.is_template ? "Template" : "Save as template"}
             </Button>
-            <Button variant="outline" size="sm" onClick={() => setShareOpen(true)}>
-              <Share2 className="size-3.5" /> Share
-            </Button>
+            {myAccessLevel === "full_control" && (
+              <Button variant="outline" size="sm" onClick={() => setShareOpen(true)}>
+                <Share2 className="size-3.5" /> Share
+              </Button>
+            )}
             <Button
               variant="outline"
               size="sm"

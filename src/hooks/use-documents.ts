@@ -73,6 +73,22 @@ export function useDocument(documentId: string | undefined) {
   });
 }
 
+/** The viewer's own effective access to a document, via the same
+ * `document_access_level()` function the RLS policies use — lets the
+ * UI hide sharing controls for anyone below full_control instead of
+ * showing a Share button whose Add/Revoke actions RLS silently rejects. */
+export function useMyDocumentAccessLevel(documentId: string | undefined) {
+  return useQuery({
+    queryKey: ["document-access-level", documentId],
+    enabled: !!documentId,
+    queryFn: async () => {
+      const { data, error } = await supabase.rpc("document_access_level", { p_document_id: documentId! });
+      if (error) throw error;
+      return data as DocAccessLevel | null;
+    },
+  });
+}
+
 export function useCreateDocument() {
   const { company } = useWorkspace();
   const { user } = useAuth();
@@ -238,8 +254,11 @@ export function useRevokeDocumentShare(documentId: string | undefined) {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (permissionId: string) => {
-      const { error } = await supabase.from("document_permissions").delete().eq("id", permissionId);
+      const { data, error } = await supabase.from("document_permissions").delete().eq("id", permissionId).select("id");
       if (error) throw error;
+      if (!data || data.length === 0) {
+        throw new Error("You don't have permission to revoke this share.");
+      }
       await supabase.rpc("log_audit_event", {
         p_company_id: company!.id,
         p_action: "document.share_revoked",

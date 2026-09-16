@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Globe, Lock, X } from "lucide-react";
+import { toast } from "sonner";
 import {
   Dialog,
   DialogContent,
@@ -51,9 +52,21 @@ export function ShareDialog({
   const shareableMembers = members?.filter((m) => !sharedMemberIds.has(m.id)) ?? [];
 
   async function shareWithRole() {
-    const targets = members?.filter((m) => m.role === pickedRole) ?? [];
-    for (const m of targets) {
-      await shareDocument.mutateAsync({ memberId: m.id, accessLevel: bulkAccessLevel });
+    try {
+      const targets = members?.filter((m) => m.role === pickedRole) ?? [];
+      for (const m of targets) {
+        await shareDocument.mutateAsync({ memberId: m.id, accessLevel: bulkAccessLevel });
+      }
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Could not share document");
+    }
+  }
+
+  async function handleRevoke(permissionId: string) {
+    try {
+      await revokeShare.mutateAsync(permissionId);
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Could not revoke access");
     }
   }
 
@@ -128,8 +141,12 @@ export function ShareDialog({
               <Button
                 disabled={!pickedMemberId}
                 onClick={async () => {
-                  await shareDocument.mutateAsync({ memberId: pickedMemberId, accessLevel: "edit" });
-                  setPickedMemberId("");
+                  try {
+                    await shareDocument.mutateAsync({ memberId: pickedMemberId, accessLevel: "edit" });
+                    setPickedMemberId("");
+                  } catch (err) {
+                    toast.error(err instanceof Error ? err.message : "Could not share document");
+                  }
                 }}
               >
                 Add
@@ -186,7 +203,7 @@ export function ShareDialog({
                       ))}
                     </SelectContent>
                   </Select>
-                  <Button variant="ghost" size="icon" className="size-6" onClick={() => revokeShare.mutate(p.id)}>
+                  <Button variant="ghost" size="icon" className="size-6" onClick={() => void handleRevoke(p.id)}>
                     <X className="size-3.5" />
                   </Button>
                 </div>
