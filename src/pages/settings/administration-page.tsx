@@ -39,9 +39,33 @@ const ROLES: CompanyRole[] = ["owner", "admin", "manager", "employee", "guest"];
 function PeopleTab() {
   const { data: profiles, isLoading } = useAllProfiles();
   const { data: companies } = useAllCompanies();
+  const { user } = useAuth();
   const setDisabled = useSetUserDisabled();
   const setPlatformAdmin = useSetPlatformAdmin();
   const inviteUser = useInviteUser();
+
+  async function handleToggleAdmin(targetId: string, nextIsAdmin: boolean) {
+    try {
+      await setPlatformAdmin.mutateAsync({ userId: targetId, isAdmin: nextIsAdmin });
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Could not update platform admin status");
+    }
+  }
+
+  async function handleToggleDisabled(targetId: string, nextDisabled: boolean) {
+    if (nextDisabled) {
+      if (targetId === user?.id) {
+        toast.error("You can't disable your own account.");
+        return;
+      }
+      if (!window.confirm("Disable this user? They lose access to every company immediately.")) return;
+    }
+    try {
+      await setDisabled.mutateAsync({ userId: targetId, disabled: nextDisabled });
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Could not update user status");
+    }
+  }
 
   const [inviteOpen, setInviteOpen] = useState(false);
   const [name, setName] = useState("");
@@ -110,7 +134,7 @@ function PeopleTab() {
               variant="ghost"
               size="sm"
               disabled={setPlatformAdmin.isPending}
-              onClick={() => setPlatformAdmin.mutate({ userId: p.id, isAdmin: !p.is_platform_admin })}
+              onClick={() => void handleToggleAdmin(p.id, !p.is_platform_admin)}
             >
               <UserCog className="size-3.5" />
               {p.is_platform_admin ? "Revoke admin" : "Make admin"}
@@ -118,8 +142,8 @@ function PeopleTab() {
             <Button
               variant="ghost"
               size="sm"
-              disabled={setDisabled.isPending}
-              onClick={() => setDisabled.mutate({ userId: p.id, disabled: !p.disabled_at })}
+              disabled={setDisabled.isPending || p.id === user?.id}
+              onClick={() => void handleToggleDisabled(p.id, !p.disabled_at)}
             >
               <Ban className="size-3.5" />
               {p.disabled_at ? "Reactivate" : "Disable"}

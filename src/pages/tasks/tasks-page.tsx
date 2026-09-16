@@ -1,10 +1,11 @@
 import { useEffect, useState } from "react";
 import { useSearchParams } from "react-router-dom";
-import { Plus } from "lucide-react";
+import { AlertTriangle, Plus } from "lucide-react";
 import { PageHeader } from "@/components/shared/page-header";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Skeleton } from "@/components/ui/skeleton";
+import { EmptyState } from "@/components/shared/empty-state";
 import { KanbanBoard } from "@/components/tasks/kanban-board";
 import { TaskListView } from "@/components/tasks/task-list-view";
 import { TaskCalendarView } from "@/components/tasks/task-calendar-view";
@@ -16,7 +17,7 @@ import type { Task } from "@/types/database";
 type ViewMode = "list" | "kanban" | "calendar" | "timeline";
 
 export function TasksPage() {
-  const { data: tasks, isLoading } = useTasks();
+  const { data: tasks, isLoading, isError, error, refetch } = useTasks();
   const [view, setView] = useState<ViewMode>("kanban");
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingTask, setEditingTask] = useState<Task | undefined>();
@@ -77,6 +78,19 @@ export function TasksPage() {
           <Skeleton className="h-10 w-full" />
           <Skeleton className="h-10 w-full" />
           <Skeleton className="h-10 w-full" />
+        </div>
+      ) : isError ? (
+        <div className="p-6">
+          <EmptyState
+            icon={AlertTriangle}
+            title="Couldn't load tasks"
+            description={error instanceof Error ? error.message : "Something went wrong fetching your tasks."}
+            action={
+              <Button size="sm" variant="outline" onClick={() => void refetch()}>
+                Try again
+              </Button>
+            }
+          />
         </div>
       ) : (
         <div className="flex-1 overflow-hidden">

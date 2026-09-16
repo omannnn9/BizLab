@@ -216,7 +216,10 @@ export function useDocumentPermissions(documentId: string | undefined) {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("document_permissions")
-        .select("*, member:company_members(*, profile:profiles(*))")
+        // Same company_members-has-two-FKs-to-profiles ambiguity as
+        // useTasks/useCompanyMembers — without naming the constraint this
+        // errors on every call instead of listing anyone.
+        .select("*, member:company_members(*, profile:profiles!company_members_user_id_fkey(*))")
         .eq("document_id", documentId!);
       if (error) throw error;
       return data ?? [];

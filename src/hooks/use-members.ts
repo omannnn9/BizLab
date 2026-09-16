@@ -12,7 +12,12 @@ export function useCompanyMembers() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("company_members")
-        .select("*, profile:profiles(*)")
+        // company_members has two FKs to profiles (user_id, invited_by) —
+        // PostgREST can't infer which one "profile" means without this
+        // hint, and errors on every request instead. Silently, too: the
+        // hook has no isError handling anywhere it's used, so this read
+        // as "no members" rather than a real failure.
+        .select("*, profile:profiles!company_members_user_id_fkey(*)")
         .eq("company_id", company!.id)
         .eq("status", "active")
         .order("created_at", { ascending: true });

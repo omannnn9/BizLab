@@ -14,8 +14,13 @@ function normalize(row: RawTask): Task {
   return { ...rest, assignees: task_assignees?.map((a) => a.member) ?? [] };
 }
 
+// company_members has two FKs to profiles (user_id, invited_by) — without
+// naming the constraint, PostgREST can't resolve "profile" and rejects the
+// whole query. This was silent from the caller's point of view (no
+// isError handling anywhere tasks are read), so every task list rendered
+// as simply empty instead of surfacing a real fetch error.
 const TASK_SELECT =
-  "*, project:projects(id,name,color), task_assignees(member:company_members(*, profile:profiles(*)))";
+  "*, project:projects(id,name,color), task_assignees(member:company_members(*, profile:profiles!company_members_user_id_fkey(*)))";
 
 export function useTasks(filters?: { projectId?: string }) {
   const { company } = useWorkspace();
