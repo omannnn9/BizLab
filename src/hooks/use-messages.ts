@@ -81,12 +81,14 @@ export function useSendMessage(channelId: string | undefined) {
         const validationError = validateFile(file);
         if (validationError) throw new Error(validationError);
 
+        // sanitizeFileName is for the storage object key only — keep the
+        // real filename for display (see its docstring).
         const safeName = sanitizeFileName(file.name);
         const storagePath = `${company!.id}/${crypto.randomUUID()}-${safeName}`;
         const { error: uploadError } = await supabase.storage.from(ATTACHMENTS_BUCKET).upload(storagePath, file);
         if (uploadError) throw uploadError;
 
-        attachments.push({ name: safeName, storage_path: storagePath, size: file.size, mime_type: file.type });
+        attachments.push({ name: file.name, storage_path: storagePath, size: file.size, mime_type: file.type });
       }
 
       const { error } = await supabase.from("chat_messages").insert({

@@ -94,6 +94,10 @@ export function useUploadFile(folderId: string | null) {
         );
       }
 
+      // sanitizeFileName is for the storage object key only — the
+      // backend rejects keys with smart punctuation/non-ASCII characters
+      // (see its docstring). The display name keeps the real filename
+      // the user actually gave it.
       const safeName = sanitizeFileName(file.name);
       const storagePath = `${company!.id}/${crypto.randomUUID()}-${safeName}`;
       const { error: uploadError } = await supabase.storage.from(BUCKET).upload(storagePath, file);
@@ -102,7 +106,7 @@ export function useUploadFile(folderId: string | null) {
       const { error } = await supabase.from("files").insert({
         company_id: company!.id,
         folder_id: folderId,
-        name: safeName,
+        name: file.name,
         storage_path: storagePath,
         file_size: file.size,
         mime_type: file.type || null,

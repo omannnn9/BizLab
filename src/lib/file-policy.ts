@@ -45,8 +45,29 @@ export function validateFile(file: File): string | null {
   return null;
 }
 
-/** Strips characters that would otherwise create confusing nested
- * "folders" in the storage bucket or break the signed-URL filename. */
+/** Produces a storage-safe object key component from a filename — NOT
+ * for display (see the note in useUploadFile: the `files.name` column
+ * keeps the original, unsanitized name). The storage backend only
+ * accepts a fairly plain character set for object keys; a real-world
+ * filename pasted from Word/Docs is full of smart punctuation (em/en
+ * dashes, curly quotes) that survived the old version of this function
+ * unchanged and got rejected outright with a 400 on upload — confirmed
+ * live via a failed upload of "Tablo — Business Plan…pdf" (the em dash
+ * was the culprit). Normalize that punctuation to plain ASCII instead
+ * of just blacklisting a handful of characters, so this doesn't keep
+ * recurring for the next exotic character someone's filename happens
+ * to contain. */
 export function sanitizeFileName(name: string): string {
-  return name.replace(/[/\\?%*:|"<>]/g, "-").slice(0, 200);
+  const cleaned = name
+    .normalize("NFKD")
+    .replace(/[‐-―]/g, "-") // hyphen/dash variants, incl. em/en dash
+    .replace(/[‘’‚‛]/g, "'") // curly single quotes
+    .replace(/[“”„‟]/g, '"') // curly double quotes
+    .replace(/[̀-ͯ]/g, "") // combining diacritics left by NFKD
+    .replace(/[^\x20-\x7E]/g, "-") // anything still non-ASCII-printable
+    .replace(/[/\\?%*:|"<>]/g, "-")
+    .replace(/-{2,}/g, "-")
+    .trim()
+    .slice(0, 200);
+  return cleaned || "file";
 }
