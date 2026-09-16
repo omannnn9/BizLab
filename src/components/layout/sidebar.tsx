@@ -9,10 +9,8 @@ import {
   FolderOpen,
   Gauge,
   Home,
-  LayoutDashboard,
   ListTodo,
   MessagesSquare,
-  PenTool,
   Settings,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -34,7 +32,6 @@ const WORK_ITEMS = [
 
 const COLLAB_ITEMS = [
   { to: "chat", label: "Collaboration", icon: MessagesSquare },
-  { to: "whiteboards", label: "Whiteboards", icon: PenTool },
   { to: "files", label: "Files", icon: FolderOpen },
 ];
 
@@ -103,20 +100,6 @@ export function SidebarNav({ onNavigate }: { onNavigate?: () => void }) {
         )}
       </nav>
       <div className="border-t border-sidebar-border p-3">
-        <NavLink
-          to="dashboards"
-          className={({ isActive }) =>
-            cn(
-              "flex items-center gap-2.5 rounded-md px-2.5 py-1.5 text-sm font-medium transition-colors",
-              isActive
-                ? "bg-primary/15 text-primary"
-                : "text-sidebar-foreground/75 hover:bg-white/5 hover:text-sidebar-foreground"
-            )
-          }
-        >
-          <LayoutDashboard className="size-4" />
-          Dashboards
-        </NavLink>
         <NavLink
           to="settings"
           className={({ isActive }) =>

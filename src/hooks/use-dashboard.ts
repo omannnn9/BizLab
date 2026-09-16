@@ -15,44 +15,9 @@ function sortWidgets(dashboard: DashboardWithWidgets): DashboardWithWidgets {
   };
 }
 
-/** Every dashboard the current user can see: the shared workspace one
- * plus any personal dashboards they own. */
-export function useDashboards() {
-  const { company } = useWorkspace();
-  const { user } = useAuth();
-
-  return useQuery({
-    queryKey: ["dashboards", company?.id, user?.id],
-    enabled: !!company && !!user,
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("dashboards")
-        .select("*")
-        .eq("company_id", company!.id)
-        .order("is_default", { ascending: false })
-        .order("created_at", { ascending: true });
-      if (error) throw error;
-      return (data ?? []) as Dashboard[];
-    },
-  });
-}
-
-export function useDashboard(dashboardId: string | undefined) {
-  return useQuery({
-    queryKey: ["dashboard", dashboardId],
-    enabled: !!dashboardId,
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("dashboards")
-        .select("*, dashboard_widgets(*)")
-        .eq("id", dashboardId!)
-        .single();
-      if (error) throw error;
-      return sortWidgets(data as unknown as DashboardWithWidgets);
-    },
-  });
-}
-
+/** The one shared, company-wide dashboard — backs Home's editable
+ * Quick Links section. There is no personal/multi-dashboard system
+ * anymore; Home is the single destination for everyone. */
 export function useDefaultDashboard() {
   const { company } = useWorkspace();
 
@@ -69,42 +34,6 @@ export function useDefaultDashboard() {
       if (error) throw error;
       return sortWidgets(data as unknown as DashboardWithWidgets);
     },
-  });
-}
-
-export function useCreateDashboard() {
-  const { company } = useWorkspace();
-  const { user } = useAuth();
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: async (name: string) => {
-      const { data, error } = await supabase
-        .from("dashboards")
-        .insert({ company_id: company!.id, name, owner_id: user!.id, created_by: user!.id })
-        .select()
-        .single();
-      if (error) throw error;
-      return data as Dashboard;
-    },
-    onSuccess: () => void queryClient.invalidateQueries({ queryKey: ["dashboards", company?.id] }),
-  });
-}
-
-/** RLS ("owner or managers delete dashboards", 0008_dashboards.sql)
- * refuses to delete the shared default dashboard even for an owner —
- * `and not is_default` in the policy — so this only ever removes a
- * personal one. */
-export function useDeleteDashboard() {
-  const { company } = useWorkspace();
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: async (id: string) => {
-      const { error } = await supabase.from("dashboards").delete().eq("id", id);
-      if (error) throw error;
-    },
-    onSuccess: () => void queryClient.invalidateQueries({ queryKey: ["dashboards", company?.id] }),
   });
 }
 
@@ -132,45 +61,6 @@ export function useUpdateWidgetConfig(dashboardId: string | undefined) {
     mutationFn: async ({ widgetId, config }: { widgetId: string; config: Record<string, unknown> }) => {
       const { error } = await supabase.from("dashboard_widgets").update({ config }).eq("id", widgetId);
       if (error) throw error;
-    },
-    onSuccess: () => {
-      void queryClient.invalidateQueries({ queryKey: ["dashboard", dashboardId] });
-      void queryClient.invalidateQueries({ queryKey: ["dashboard", "default"] });
-    },
-  });
-}
-
-export function useRemoveWidget(dashboardId: string | undefined) {
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: async (widgetId: string) => {
-      const { error } = await supabase.from("dashboard_widgets").delete().eq("id", widgetId);
-      if (error) throw error;
-    },
-    onSuccess: () => {
-      void queryClient.invalidateQueries({ queryKey: ["dashboard", dashboardId] });
-      void queryClient.invalidateQueries({ queryKey: ["dashboard", "default"] });
-    },
-  });
-}
-
-/** Persists drag-and-drop reordering: widget layouts store an `x` used
- * purely as a sort order (there's no real grid engine — a reorderable
- * list, not a resizable free-form grid). */
-export function useReorderWidgets(dashboardId: string | undefined) {
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: async (orderedWidgets: DashboardWidget[]) => {
-      await Promise.all(
-        orderedWidgets.map((w, index) =>
-          supabase
-            .from("dashboard_widgets")
-            .update({ layout: { ...w.layout, x: index } })
-            .eq("id", w.id)
-        )
-      );
     },
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: ["dashboard", dashboardId] });

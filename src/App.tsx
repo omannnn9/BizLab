@@ -18,17 +18,16 @@ import { AcceptInvitePage } from "@/pages/auth/accept-invite";
 import { WorkspacePicker } from "@/pages/onboarding/workspace-picker";
 
 // Route-level code splitting: everything behind the workspace shell is
-// lazy-loaded. These pages (rich editors, the kanban board, the
-// whiteboard canvas) accounted for most of the original 811 KB single
-// bundle; auth/onboarding stay eager since they're the actual first
-// paint for a signed-out visitor and are small on their own.
+// lazy-loaded. These pages (rich editors, the kanban board) accounted
+// for most of the original 811 KB single bundle; auth/onboarding stay
+// eager since they're the actual first paint for a signed-out visitor
+// and are small on their own.
 const WorkspaceHomePage = lazy(() => import("@/pages/dashboard/home-page").then((m) => ({ default: m.HomePage })));
 const MyWorkPage = lazy(() => import("@/pages/dashboard/my-work-page").then((m) => ({ default: m.MyWorkPage })));
 const CompaniesPage = lazy(() => import("@/pages/dashboard/companies-page").then((m) => ({ default: m.CompaniesPage })));
 const CommandCenterPage = lazy(() =>
   import("@/pages/dashboard/command-center-page").then((m) => ({ default: m.CommandCenterPage }))
 );
-const DashboardPage = lazy(() => import("@/pages/dashboard/dashboard-page").then((m) => ({ default: m.DashboardPage })));
 const TasksPage = lazy(() => import("@/pages/tasks/tasks-page").then((m) => ({ default: m.TasksPage })));
 const ProjectsPage = lazy(() => import("@/pages/projects/projects-page").then((m) => ({ default: m.ProjectsPage })));
 const ProjectDetailPage = lazy(() =>
@@ -41,12 +40,6 @@ const DocumentEditorPage = lazy(() =>
 const FilesPage = lazy(() => import("@/pages/files/files-page").then((m) => ({ default: m.FilesPage })));
 const FileEditorPage = lazy(() => import("@/pages/files/file-editor-page").then((m) => ({ default: m.FileEditorPage })));
 const ChatPage = lazy(() => import("@/pages/chat/chat-page").then((m) => ({ default: m.ChatPage })));
-const WhiteboardsPage = lazy(() =>
-  import("@/pages/whiteboards/whiteboards-page").then((m) => ({ default: m.WhiteboardsPage }))
-);
-const WhiteboardEditorPage = lazy(() =>
-  import("@/pages/whiteboards/whiteboard-editor-page").then((m) => ({ default: m.WhiteboardEditorPage }))
-);
 const KnowledgePage = lazy(() => import("@/pages/knowledge/knowledge-page").then((m) => ({ default: m.KnowledgePage })));
 const KnowledgeArticlePage = lazy(() =>
   import("@/pages/knowledge/knowledge-article-page").then((m) => ({ default: m.KnowledgeArticlePage }))
@@ -109,7 +102,8 @@ export default function App() {
                         <Route path="my-work" element={<MyWorkPage />} />
                         <Route path="companies" element={<CompaniesPage />} />
                         <Route path="command-center" element={<CommandCenterPage />} />
-                        <Route path="dashboards" element={<DashboardPage />} />
+                        {/* Dashboards was folded into Home — redirect old bookmarks/links instead of 404ing. */}
+                        <Route path="dashboards" element={<Navigate to=".." replace />} />
                         <Route path="tasks" element={<TasksPage />} />
                         <Route path="projects" element={<ProjectsPage />} />
                         <Route path="projects/:projectId" element={<ProjectDetailPage />} />
@@ -119,8 +113,6 @@ export default function App() {
                         <Route path="files/:fileId" element={<FileEditorPage />} />
                         <Route path="chat" element={<ChatPage />} />
                         <Route path="chat/:channelId" element={<ChatPage />} />
-                        <Route path="whiteboards" element={<WhiteboardsPage />} />
-                        <Route path="whiteboards/:whiteboardId" element={<WhiteboardEditorPage />} />
                         <Route path="knowledge" element={<KnowledgePage />} />
                         <Route path="knowledge/:articleId" element={<KnowledgeArticlePage />} />
                         <Route path="notifications" element={<NotificationsPage />} />

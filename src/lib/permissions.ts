@@ -44,7 +44,6 @@ export type Resource =
   | "documents"
   | "files"
   | "chat"
-  | "whiteboards"
   | "dashboards"
   | "knowledge_hub"
   | "audit_logs";
@@ -60,7 +59,6 @@ export const PERMISSION_MATRIX: Record<Resource, Partial<Record<Action, CompanyR
   documents: { view: "employee", create: "employee", edit: "employee", delete: "manager" },
   files: { view: "employee", create: "employee", edit: "employee", delete: "employee" },
   chat: { view: "employee", create: "employee" },
-  whiteboards: { view: "employee", create: "employee", delete: "manager" },
   dashboards: { view: "employee", create: "employee", manage: "manager" },
   knowledge_hub: { view: "employee", create: "manager", edit: "manager", delete: "admin" },
   audit_logs: { view: "admin" },

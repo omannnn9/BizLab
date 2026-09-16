@@ -256,20 +256,6 @@ export interface ChatMessage {
   author?: Profile;
 }
 
-export interface Whiteboard {
-  id: string;
-  company_id: string;
-  project_id: string | null;
-  name: string;
-  thumbnail_url: string | null;
-  canvas_data: { elements: unknown[]; appState: Record<string, unknown> };
-  is_archived: boolean;
-  created_by: string;
-  updated_by: string | null;
-  created_at: string;
-  updated_at: string;
-}
-
 export interface Dashboard {
   id: string;
   company_id: string;

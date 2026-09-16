@@ -2,8 +2,8 @@ import { Loader2 } from "lucide-react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 
-/** Shared loading/error UI for single-record editor pages (a document,
- * whiteboard, or knowledge article fetched by id). Replaces the old
+/** Shared loading/error UI for single-record editor pages (a document
+ * or knowledge article fetched by id). Replaces the old
  * `if (isLoading || !record) return null` pattern, which rendered a
  * silent, permanently blank page whenever the fetch actually failed
  * (RLS denial, bad id, network error) instead of just being slow. */

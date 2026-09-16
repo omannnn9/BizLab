@@ -6,7 +6,7 @@ import {
   Clock,
   FileText,
   Folders,
-  PenTool,
+  Link2,
   Plus,
   Upload,
 } from "lucide-react";
@@ -14,11 +14,13 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { EmptyState } from "@/components/shared/empty-state";
-import { useDashboardStats } from "@/hooks/use-dashboard";
+import { QuickLinksWidget } from "@/components/dashboard/quick-links-widget";
+import { useAddWidget, useDashboardStats, useDefaultDashboard } from "@/hooks/use-dashboard";
 import { useMyWorkTasks } from "@/hooks/use-my-work";
 import { useWorkspace } from "@/hooks/use-workspace";
 import { useAuth } from "@/hooks/use-auth";
 import { useMyCompanies } from "@/hooks/use-companies";
+import { usePermissions } from "@/hooks/use-permissions";
 import { formatDistanceToNow } from "date-fns";
 import { cn } from "@/lib/utils";
 
@@ -41,6 +43,12 @@ export function HomePage() {
   const { data: stats, isLoading: statsLoading } = useDashboardStats();
   const { data: myWork, isLoading: myWorkLoading } = useMyWorkTasks();
   const { data: companies } = useMyCompanies();
+  const { data: dashboard } = useDefaultDashboard();
+  const { can } = usePermissions();
+  const addWidget = useAddWidget(dashboard?.id);
+
+  const canEditQuickLinks = can("dashboards", "manage");
+  const quickLinksWidget = dashboard?.dashboard_widgets.find((w) => w.widget_type === "quick_links");
 
   const isLoading = statsLoading || myWorkLoading;
   const firstName = profile?.full_name?.split(" ")[0];
@@ -85,10 +93,29 @@ export function HomePage() {
           <Button variant="outline" size="sm" asChild>
             <Link to="../files"><Upload className="size-3.5" /> Upload file</Link>
           </Button>
-          <Button variant="outline" size="sm" asChild>
-            <Link to="../whiteboards"><PenTool className="size-3.5" /> New whiteboard</Link>
-          </Button>
         </div>
+
+        {/* Quick links — the one editable part of Home. Backed by the
+            company's shared dashboard row so it's the same for everyone;
+            only manager+ sees add/remove controls (mirrors the
+            dashboard_widgets RLS policy, 0008_dashboards.sql). */}
+        {(quickLinksWidget || canEditQuickLinks) && (
+          <section>
+            <h2 className="font-display mb-3 flex items-center gap-2 text-base font-semibold">
+              <span className="flex size-6 items-center justify-center rounded-md bg-accent/60 text-foreground">
+                <Link2 className="size-3.5" />
+              </span>
+              Quick links
+            </h2>
+            {quickLinksWidget ? (
+              <QuickLinksWidget widget={quickLinksWidget} dashboardId={dashboard?.id} canEdit={canEditQuickLinks} />
+            ) : canEditQuickLinks && dashboard ? (
+              <Button variant="outline" size="sm" onClick={() => addWidget.mutate("quick_links")} disabled={addWidget.isPending}>
+                <Plus className="size-3.5" /> Set up quick links
+              </Button>
+            ) : null}
+          </section>
+        )}
 
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
           {/* Today's focus */}
