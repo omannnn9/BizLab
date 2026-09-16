@@ -1,6 +1,7 @@
 import { useState } from "react";
-import { useParams } from "react-router-dom";
-import { Plus } from "lucide-react";
+import { useNavigate, useParams } from "react-router-dom";
+import { Plus, Trash2 } from "lucide-react";
+import { toast } from "sonner";
 import { PageHeader } from "@/components/shared/page-header";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -11,36 +12,86 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { KanbanBoard } from "@/components/tasks/kanban-board";
 import { TaskListView } from "@/components/tasks/task-list-view";
 import { TaskDialog } from "@/components/tasks/task-dialog";
-import { useProject } from "@/hooks/use-projects";
+import { EntityLoadGuard } from "@/components/shared/entity-load-guard";
+import { useDeleteProject, useProject } from "@/hooks/use-projects";
 import { useTasks } from "@/hooks/use-tasks";
 import { useCreateMilestone, useMilestones, useUpdateMilestone } from "@/hooks/use-milestones";
+import { usePermissions } from "@/hooks/use-permissions";
+import { useWorkspace } from "@/hooks/use-workspace";
 import type { Task } from "@/types/database";
 
 export function ProjectDetailPage() {
   const { projectId } = useParams<{ projectId: string }>();
-  const { data: project } = useProject(projectId);
+  const { data: project, isLoading: projectLoading, isError: projectError } = useProject(projectId);
   const { data: tasks, isLoading } = useTasks({ projectId });
   const { data: milestones } = useMilestones(projectId);
   const createMilestone = useCreateMilestone(projectId!);
   const updateMilestone = useUpdateMilestone(projectId!);
+  const deleteProject = useDeleteProject();
+  const { can } = usePermissions();
+  const { company } = useWorkspace();
+  const navigate = useNavigate();
 
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingTask, setEditingTask] = useState<Task | undefined>();
   const [milestoneName, setMilestoneName] = useState("");
   const [view, setView] = useState<"kanban" | "list">("kanban");
 
+  async function handleDeleteProject() {
+    if (!project) return;
+    if (
+      !window.confirm(
+        `Delete "${project.name}"? This permanently deletes every task and milestone in this project too — it can't be undone.`
+      )
+    ) {
+      return;
+    }
+    try {
+      await deleteProject.mutateAsync(project.id);
+      navigate(`/w/${company?.slug}/projects`);
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Could not delete project");
+    }
+  }
+
   const done = tasks?.filter((t) => t.status === "done").length ?? 0;
   const total = tasks?.length ?? 0;
   const progress = total > 0 ? Math.round((done / total) * 100) : 0;
 
-  if (!project) return null;
+  if (projectLoading || projectError || !project) {
+    return (
+      <EntityLoadGuard
+        isLoading={projectLoading}
+        isError={projectError}
+        backTo={`/w/${company?.slug}/projects`}
+        backLabel="Back to projects"
+        notFoundMessage="This project doesn't exist or you don't have access to it."
+      />
+    );
+  }
 
   return (
     <div className="flex h-full flex-col">
       <PageHeader
         title={project.name}
         description={project.description ?? undefined}
-        actions={<Badge variant="outline">{project.status.replace("_", " ")}</Badge>}
+        actions={
+          <div className="flex items-center gap-2">
+            <Badge variant="outline">{project.status.replace("_", " ")}</Badge>
+            {can("projects", "delete") && (
+              <Button
+                variant="ghost"
+                size="icon"
+                className="text-muted-foreground hover:text-destructive"
+                onClick={() => void handleDeleteProject()}
+                disabled={deleteProject.isPending}
+                title="Delete project"
+              >
+                <Trash2 className="size-4" />
+              </Button>
+            )}
+          </div>
+        }
       />
 
       <div className="border-b px-6 py-3">

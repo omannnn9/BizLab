@@ -90,6 +90,22 @@ export function useCreateProject() {
   });
 }
 
+export function useDeleteProject() {
+  const { company } = useWorkspace();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const { data, error } = await supabase.from("projects").delete().eq("id", id).select("id");
+      if (error) throw error;
+      if (!data || data.length === 0) {
+        throw new Error("You don't have permission to delete this project.");
+      }
+    },
+    onSuccess: () => void queryClient.invalidateQueries({ queryKey: ["projects", company?.id] }),
+  });
+}
+
 export function useUpdateProject() {
   const { company } = useWorkspace();
   const queryClient = useQueryClient();

@@ -24,6 +24,8 @@ import { TaskComments } from "@/components/tasks/task-comments";
 import { useCreateTask, useDeleteTask, useSetTaskAssignees, useUpdateTask } from "@/hooks/use-tasks";
 import { useProjects } from "@/hooks/use-projects";
 import { useCompanyMembers } from "@/hooks/use-members";
+import { useAuth } from "@/hooks/use-auth";
+import { usePermissions } from "@/hooks/use-permissions";
 import type { Task, TaskPriority, TaskStatus } from "@/types/database";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
@@ -54,6 +56,11 @@ export function TaskDialog({
   const updateTask = useUpdateTask();
   const deleteTask = useDeleteTask();
   const setAssignees = useSetTaskAssignees();
+  const { user } = useAuth();
+  const { can } = usePermissions();
+
+  // Mirrors the "managers+ or creator delete tasks" RLS policy.
+  const canDeleteTask = !!task && (task.created_by === user?.id || can("tasks", "delete"));
 
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
@@ -214,14 +221,19 @@ export function TaskDialog({
           {task && <TaskComments taskId={task.id} />}
 
           <DialogFooter className="sm:justify-between">
-            {task && (
+            {canDeleteTask && (
               <Button
                 type="button"
                 variant="ghost"
                 className="text-destructive hover:text-destructive"
+                disabled={deleteTask.isPending}
                 onClick={async () => {
-                  await deleteTask.mutateAsync(task.id);
-                  onOpenChange(false);
+                  try {
+                    await deleteTask.mutateAsync(task!.id);
+                    onOpenChange(false);
+                  } catch (err) {
+                    toast.error(err instanceof Error ? err.message : "Could not delete task");
+                  }
                 }}
               >
                 Delete task

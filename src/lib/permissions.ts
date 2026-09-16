@@ -57,7 +57,10 @@ export const PERMISSION_MATRIX: Record<Resource, Partial<Record<Action, CompanyR
   projects: { view: "employee", create: "manager", edit: "manager", delete: "admin" },
   tasks: { view: "employee", create: "employee", edit: "employee", delete: "manager" },
   documents: { view: "employee", create: "employee", edit: "employee", delete: "manager" },
-  files: { view: "employee", create: "employee", edit: "employee", delete: "employee" },
+  // delete: RLS also allows a file's own uploader regardless of role
+  // (public.files "uploader or managers delete files") — checked
+  // separately in the UI alongside this "or a manager+" fallback.
+  files: { view: "employee", create: "employee", edit: "employee", delete: "manager" },
   chat: { view: "employee", create: "employee" },
   dashboards: { view: "employee", create: "employee", manage: "manager" },
   knowledge_hub: { view: "employee", create: "manager", edit: "manager", delete: "admin" },

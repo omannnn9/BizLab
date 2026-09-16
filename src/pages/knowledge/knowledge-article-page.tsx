@@ -1,7 +1,8 @@
 import { useEffect, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { ArrowLeft, Check, Loader2 } from "lucide-react";
+import { ArrowLeft, Check, Loader2, Trash2 } from "lucide-react";
 import type { JSONContent } from "@tiptap/react";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import {
@@ -14,7 +15,9 @@ import {
 import { RichTextEditor } from "@/components/documents/rich-text-editor";
 import { EntityLoadGuard } from "@/components/shared/entity-load-guard";
 import { normalizeRichContent } from "@/lib/tiptap-content";
-import { useKnowledgeArticle, useUpdateKnowledgeArticle } from "@/hooks/use-knowledge";
+import { useDeleteKnowledgeArticle, useKnowledgeArticle, useUpdateKnowledgeArticle } from "@/hooks/use-knowledge";
+import { useAuth } from "@/hooks/use-auth";
+import { usePermissions } from "@/hooks/use-permissions";
 import { useWorkspace } from "@/hooks/use-workspace";
 import type { KnowledgeCategory } from "@/types/database";
 
@@ -24,8 +27,25 @@ export function KnowledgeArticlePage() {
   const { articleId } = useParams<{ articleId: string }>();
   const { data: article, isLoading, isError } = useKnowledgeArticle(articleId);
   const updateArticle = useUpdateKnowledgeArticle();
+  const deleteArticle = useDeleteKnowledgeArticle();
   const { company } = useWorkspace();
+  const { user } = useAuth();
+  const { can } = usePermissions();
   const navigate = useNavigate();
+
+  // Mirrors the "author or admins delete articles" RLS policy.
+  const canDelete = !!article && (article.created_by === user?.id || can("knowledge_hub", "delete"));
+
+  async function handleDelete() {
+    if (!articleId) return;
+    if (!window.confirm("Delete this article? This can't be undone.")) return;
+    try {
+      await deleteArticle.mutateAsync(articleId);
+      navigate(`/w/${company?.slug}/knowledge`);
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Could not delete article");
+    }
+  }
 
   const [title, setTitle] = useState("");
   const [content, setContent] = useState<JSONContent>({ type: "doc", content: [] });
@@ -93,6 +113,18 @@ export function KnowledgeArticlePage() {
             {status === "saved" && <Check className="size-3" />}
             {status !== "idle" && (status === "saving" ? "Saving…" : "Saved")}
           </span>
+          {canDelete && (
+            <Button
+              variant="ghost"
+              size="icon"
+              className="text-muted-foreground hover:text-destructive"
+              onClick={() => void handleDelete()}
+              disabled={deleteArticle.isPending}
+              title="Delete article"
+            >
+              <Trash2 className="size-4" />
+            </Button>
+          )}
         </div>
       </div>
       <div className="mx-auto w-full max-w-3xl px-8 py-10">

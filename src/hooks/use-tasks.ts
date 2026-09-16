@@ -97,8 +97,14 @@ export function useDeleteTask() {
 
   return useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await supabase.from("tasks").delete().eq("id", id);
+      // RLS silently filters an unauthorized DELETE to zero rows rather
+      // than erroring — check the returned row so the caller can tell
+      // "deleted" from "blocked" instead of showing a false success.
+      const { data, error } = await supabase.from("tasks").delete().eq("id", id).select("id");
       if (error) throw error;
+      if (!data || data.length === 0) {
+        throw new Error("You don't have permission to delete this task.");
+      }
     },
     onSuccess: () => void queryClient.invalidateQueries({ queryKey: ["tasks", company?.id] }),
   });

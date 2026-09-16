@@ -54,6 +54,22 @@ export function useCreateKnowledgeArticle() {
   });
 }
 
+export function useDeleteKnowledgeArticle() {
+  const { company } = useWorkspace();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const { data, error } = await supabase.from("knowledge_articles").delete().eq("id", id).select("id");
+      if (error) throw error;
+      if (!data || data.length === 0) {
+        throw new Error("You don't have permission to delete this article.");
+      }
+    },
+    onSuccess: () => void queryClient.invalidateQueries({ queryKey: ["knowledge-articles", company?.id] }),
+  });
+}
+
 export function useUpdateKnowledgeArticle() {
   const { user } = useAuth();
   const queryClient = useQueryClient();

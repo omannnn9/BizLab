@@ -20,6 +20,9 @@ import { EmptyState } from "@/components/shared/empty-state";
 import { useCreateFolder, useFolders } from "@/hooks/use-folders";
 import { useDeleteFile, useFiles, useUploadFile, getFileDownloadUrl } from "@/hooks/use-files";
 import { useWorkspace } from "@/hooks/use-workspace";
+import { useAuth } from "@/hooks/use-auth";
+import { usePermissions } from "@/hooks/use-permissions";
+import type { FileObject } from "@/types/database";
 
 function iconFor(mimeType: string | null) {
   if (mimeType?.startsWith("image/")) return ImageIcon;
@@ -34,6 +37,8 @@ export function FilesPage() {
   const [addingFolder, setAddingFolder] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
   const { company } = useWorkspace();
+  const { user } = useAuth();
+  const { can } = usePermissions();
   const navigate = useNavigate();
 
   const { data: folders } = useFolders("files");
@@ -41,6 +46,20 @@ export function FilesPage() {
   const createFolder = useCreateFolder("files");
   const uploadFile = useUploadFile(folderId);
   const deleteFile = useDeleteFile();
+
+  // Mirrors the "uploader or managers delete files" RLS policy — the
+  // uploader can always delete their own upload; otherwise manager+.
+  function canDeleteFile(file: FileObject) {
+    return file.uploaded_by === user?.id || can("files", "delete");
+  }
+
+  async function handleDelete(file: FileObject) {
+    try {
+      await deleteFile.mutateAsync(file);
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Could not delete file");
+    }
+  }
 
   async function handleFiles(fileList: FileList | null) {
     if (!fileList) return;
@@ -203,14 +222,17 @@ export function FilesPage() {
                             >
                               <Download className="size-3.5" />
                             </Button>
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="size-7"
-                              onClick={() => deleteFile.mutate(file)}
-                            >
-                              <Trash2 className="size-3.5" />
-                            </Button>
+                            {canDeleteFile(file) && (
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="size-7"
+                                onClick={() => void handleDelete(file)}
+                                disabled={deleteFile.isPending}
+                              >
+                                <Trash2 className="size-3.5" />
+                              </Button>
+                            )}
                           </div>
                         </td>
                       </tr>

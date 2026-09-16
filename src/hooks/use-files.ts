@@ -126,9 +126,20 @@ export function useDeleteFile() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (file: FileObject) => {
-      await supabase.storage.from(BUCKET).remove([file.storage_path]);
-      const { error } = await supabase.from("files").delete().eq("id", file.id);
+      // Delete the DB row first, and check that a row actually came
+      // back: RLS silently filters an unauthorized DELETE to zero rows
+      // rather than erroring, so `error` alone can't tell an "unauthorized"
+      // delete from a real one. Only remove the storage object once the
+      // row delete is confirmed — otherwise a member without delete
+      // rights could permanently destroy the file's bytes (storage
+      // policy is scoped to company membership) while the `files` row,
+      // now pointing at nothing, silently survives.
+      const { data, error } = await supabase.from("files").delete().eq("id", file.id).select("id");
       if (error) throw error;
+      if (!data || data.length === 0) {
+        throw new Error("You don't have permission to delete this file.");
+      }
+      await supabase.storage.from(BUCKET).remove([file.storage_path]);
     },
     onSuccess: () => void queryClient.invalidateQueries({ queryKey: ["files", company?.id] }),
   });
