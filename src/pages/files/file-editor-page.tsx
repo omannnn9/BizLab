@@ -3,7 +3,7 @@ import { useNavigate, useParams } from "react-router-dom";
 import { ArrowLeft, Check, Download, Loader2, Plus, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { EntityLoadGuard } from "@/components/shared/entity-load-guard";
-import { RichTextEditor } from "@/components/documents/rich-text-editor";
+import { RichTextEditor } from "@/components/files/rich-text-editor";
 import { useFile, useReplaceFileContent, getFileDownloadUrl } from "@/hooks/use-files";
 import { useWorkspace } from "@/hooks/use-workspace";
 import { docxHtmlToTiptapJson, tiptapJsonToDocxBlob } from "@/lib/tiptap-docx";

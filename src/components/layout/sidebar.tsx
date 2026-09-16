@@ -1,10 +1,8 @@
 import { NavLink } from "react-router-dom";
 import {
-  BookOpen,
   Building2,
   CheckSquare,
   Compass,
-  FileText,
   FolderKanban,
   FolderOpen,
   Gauge,
@@ -26,8 +24,6 @@ const PRIMARY_ITEMS = [
 const WORK_ITEMS = [
   { to: "projects", label: "Projects", icon: FolderKanban },
   { to: "tasks", label: "Tasks", icon: CheckSquare },
-  { to: "knowledge", label: "Knowledge", icon: BookOpen },
-  { to: "documents", label: "Documents", icon: FileText },
 ];
 
 const COLLAB_ITEMS = [

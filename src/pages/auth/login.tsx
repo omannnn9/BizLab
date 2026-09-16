@@ -51,7 +51,7 @@ export function LoginPage() {
             One private workspace for every OD Holdings company.
           </p>
           <p className="mt-4 max-w-sm text-sm text-sidebar-foreground/60">
-            Tasks, documents, files, chat and dashboards — access is by invitation only, granted
+            Tasks, files, chat and dashboards — access is by invitation only, granted
             and managed by your administrator.
           </p>
         </div>

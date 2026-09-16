@@ -16,10 +16,9 @@ export type TaskPriority = "none" | "low" | "medium" | "high" | "urgent";
 export type MilestoneStatus = "upcoming" | "in_progress" | "completed" | "missed";
 
 export type FolderModule = "documents" | "files";
-export type DocAccessLevel = "view" | "comment" | "edit" | "full_control";
-export type DocVisibility = "company" | "restricted";
 
 export type FileAccessLevel = "view" | "edit";
+export type ItemVisibility = "company" | "restricted";
 
 export type ChannelType = "public" | "private" | "direct" | "group";
 
@@ -33,14 +32,6 @@ export type WidgetType =
   | "my_tasks"
   | "channel_activity"
   | "quick_links";
-
-export type KnowledgeCategory =
-  | "sop"
-  | "policy"
-  | "process"
-  | "training"
-  | "onboarding"
-  | "general";
 
 export type NotificationType =
   | "task_assigned"
@@ -189,27 +180,8 @@ export interface Folder {
   parent_folder_id: string | null;
   name: string;
   position: number;
+  visibility: ItemVisibility;
   created_by: string;
-  created_at: string;
-  updated_at: string;
-}
-
-export interface Document {
-  id: string;
-  company_id: string;
-  folder_id: string | null;
-  parent_document_id: string | null;
-  is_template: boolean;
-  title: string;
-  icon: string | null;
-  cover_image_url: string | null;
-  content: Record<string, unknown>;
-  visibility: DocVisibility;
-  default_access_level: DocAccessLevel;
-  is_archived: boolean;
-  current_version: number;
-  created_by: string;
-  updated_by: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -226,9 +198,32 @@ export interface FileObject {
   version: number;
   description: string | null;
   uploaded_by: string;
+  visibility: ItemVisibility;
   deleted_at: string | null;
   created_at: string;
   updated_at: string;
+}
+
+export interface FileShare {
+  id: string;
+  file_id: string;
+  member_id: string | null;
+  access_level: FileAccessLevel;
+  share_token: string | null;
+  expires_at: string | null;
+  created_by: string;
+  created_at: string;
+  member?: CompanyMember;
+}
+
+export interface FolderShare {
+  id: string;
+  folder_id: string;
+  member_id: string;
+  access_level: FileAccessLevel;
+  created_by: string;
+  created_at: string;
+  member?: CompanyMember;
 }
 
 export interface ChatChannel {
@@ -276,21 +271,6 @@ export interface DashboardWidget {
   config: Record<string, unknown>;
   layout: { x: number; y: number; w: number; h: number };
   created_at: string;
-}
-
-export interface KnowledgeArticle {
-  id: string;
-  company_id: string;
-  category: KnowledgeCategory;
-  title: string;
-  content: Record<string, unknown>;
-  tags: string[];
-  is_published: boolean;
-  view_count: number;
-  created_by: string;
-  updated_by: string | null;
-  created_at: string;
-  updated_at: string;
 }
 
 export interface Notification {
@@ -351,14 +331,7 @@ export interface CompanySubscription {
 }
 
 export interface GlobalSearchResult {
-  result_type:
-    | "task"
-    | "project"
-    | "document"
-    | "file"
-    | "chat_message"
-    | "knowledge_article"
-    | "user";
+  result_type: "task" | "project" | "file" | "chat_message" | "user";
   id: string;
   title: string;
   snippet: string;

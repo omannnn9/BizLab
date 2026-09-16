@@ -41,11 +41,9 @@ export type Resource =
   | "members"
   | "projects"
   | "tasks"
-  | "documents"
   | "files"
   | "chat"
   | "dashboards"
-  | "knowledge_hub"
   | "audit_logs";
 
 export type Action = "view" | "create" | "edit" | "delete" | "manage";
@@ -56,14 +54,14 @@ export const PERMISSION_MATRIX: Record<Resource, Partial<Record<Action, CompanyR
   members: { view: "employee", create: "admin", edit: "admin", delete: "admin" },
   projects: { view: "employee", create: "manager", edit: "manager", delete: "admin" },
   tasks: { view: "employee", create: "employee", edit: "employee", delete: "manager" },
-  documents: { view: "employee", create: "employee", edit: "employee", delete: "manager" },
   // delete: RLS also allows a file's own uploader regardless of role
   // (public.files "uploader or managers delete files") — checked
   // separately in the UI alongside this "or a manager+" fallback.
-  files: { view: "employee", create: "employee", edit: "employee", delete: "manager" },
+  // manage: who can restrict/share a file or folder — mirrors the
+  // "uploader/creator or manager+" RLS on file_shares/folder_shares.
+  files: { view: "employee", create: "employee", edit: "employee", delete: "manager", manage: "manager" },
   chat: { view: "employee", create: "employee" },
   dashboards: { view: "employee", create: "employee", manage: "manager" },
-  knowledge_hub: { view: "employee", create: "manager", edit: "manager", delete: "admin" },
   audit_logs: { view: "admin" },
 };
 

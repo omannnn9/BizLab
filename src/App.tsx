@@ -34,17 +34,9 @@ const ProjectsPage = lazy(() => import("@/pages/projects/projects-page").then((m
 const ProjectDetailPage = lazy(() =>
   import("@/pages/projects/project-detail-page").then((m) => ({ default: m.ProjectDetailPage }))
 );
-const DocumentsPage = lazy(() => import("@/pages/documents/documents-page").then((m) => ({ default: m.DocumentsPage })));
-const DocumentEditorPage = lazy(() =>
-  import("@/pages/documents/document-editor-page").then((m) => ({ default: m.DocumentEditorPage }))
-);
 const FilesPage = lazy(() => import("@/pages/files/files-page").then((m) => ({ default: m.FilesPage })));
 const FileEditorPage = lazy(() => import("@/pages/files/file-editor-page").then((m) => ({ default: m.FileEditorPage })));
 const ChatPage = lazy(() => import("@/pages/chat/chat-page").then((m) => ({ default: m.ChatPage })));
-const KnowledgePage = lazy(() => import("@/pages/knowledge/knowledge-page").then((m) => ({ default: m.KnowledgePage })));
-const KnowledgeArticlePage = lazy(() =>
-  import("@/pages/knowledge/knowledge-article-page").then((m) => ({ default: m.KnowledgeArticlePage }))
-);
 const NotificationsPage = lazy(() =>
   import("@/pages/notifications/notifications-page").then((m) => ({ default: m.NotificationsPage }))
 );
@@ -109,14 +101,10 @@ export default function App() {
                           <Route path="tasks" element={<TasksPage />} />
                           <Route path="projects" element={<ProjectsPage />} />
                           <Route path="projects/:projectId" element={<ProjectDetailPage />} />
-                          <Route path="documents" element={<DocumentsPage />} />
-                          <Route path="documents/:documentId" element={<DocumentEditorPage />} />
                           <Route path="files" element={<FilesPage />} />
                           <Route path="files/:fileId" element={<FileEditorPage />} />
                           <Route path="chat" element={<ChatPage />} />
                           <Route path="chat/:channelId" element={<ChatPage />} />
-                          <Route path="knowledge" element={<KnowledgePage />} />
-                          <Route path="knowledge/:articleId" element={<KnowledgeArticlePage />} />
                           <Route path="notifications" element={<NotificationsPage />} />
                           <Route path="search" element={<SearchPage />} />
                           <Route path="settings" element={<SettingsLayout />}>

@@ -2,9 +2,7 @@ import { useEffect, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import {
-  BookOpen,
   CheckSquare,
-  FileText,
   FolderKanban,
   FolderOpen,
   Loader2,
@@ -22,10 +20,8 @@ import type { GlobalSearchResult } from "@/types/database";
 const TYPE_META: Record<GlobalSearchResult["result_type"], { icon: typeof SearchIcon; label: string }> = {
   task: { icon: CheckSquare, label: "Task" },
   project: { icon: FolderKanban, label: "Project" },
-  document: { icon: FileText, label: "Document" },
   file: { icon: FolderOpen, label: "File" },
   chat_message: { icon: MessagesSquare, label: "Message" },
-  knowledge_article: { icon: BookOpen, label: "Knowledge" },
   user: { icon: User, label: "Person" },
 };
 
@@ -35,14 +31,10 @@ function routeFor(result: GlobalSearchResult, slug: string) {
       return `/w/${slug}/tasks`;
     case "project":
       return `/w/${slug}/projects/${result.id}`;
-    case "document":
-      return `/w/${slug}/documents/${result.id}`;
     case "file":
       return `/w/${slug}/files`;
     case "chat_message":
       return result.url_path.replace("/chat/", `/w/${slug}/chat/`);
-    case "knowledge_article":
-      return `/w/${slug}/knowledge/${result.id}`;
     case "user":
       return `/w/${slug}/settings/members`;
   }
@@ -85,7 +77,7 @@ export function SearchPage() {
             <Input
               value={query}
               onChange={(e) => setQuery(e.target.value)}
-              placeholder="Search tasks, projects, documents, files, chat, people…"
+              placeholder="Search tasks, projects, files, chat, people…"
               className="pl-9"
             />
           </div>

@@ -4,7 +4,6 @@ import {
   ArrowRight,
   CheckSquare,
   Clock,
-  FileText,
   Folders,
   Link2,
   Plus,
@@ -86,9 +85,6 @@ export function HomePage() {
         <div className="flex flex-wrap gap-2">
           <Button variant="outline" size="sm" asChild>
             <Link to="../tasks"><Plus className="size-3.5" /> New task</Link>
-          </Button>
-          <Button variant="outline" size="sm" asChild>
-            <Link to="../documents"><FileText className="size-3.5" /> New document</Link>
           </Button>
           <Button variant="outline" size="sm" asChild>
             <Link to="../files"><Upload className="size-3.5" /> Upload file</Link>
