@@ -9,8 +9,20 @@
 //     RLS-scoped client can never do: provision an auth.users row.
 //   - "service" (service role key, injected automatically by Supabase
 //     into every edge function — never present in any frontend bundle)
-//     used strictly for auth.admin.inviteUserByEmail, after the caller
-//     has already been proven authorized.
+//     used strictly for auth.admin.createUser (brand-new accounts) and
+//     the company_members insert that follows it, after the caller has
+//     already been proven authorized.
+//
+// A brand-new account is created with an admin-chosen temporary
+// password (email_confirm: true, so it's usable immediately — no
+// invite email) rather than Supabase's inviteUserByEmail flow, and
+// profiles.must_change_password is seeded true so PasswordChangeGuard
+// forces them to set their own on first sign-in (0030_forced_password_
+// change.sql). The company_invitations/accept-invite token flow still
+// exists, but only for the other case this function handles: someone
+// who already has a BizLab account (at a different company) getting
+// added to a new one — no password involved there, so nothing about
+// this change touches that path.
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "npm:@supabase/supabase-js@2";
 
@@ -53,6 +65,7 @@ Deno.serve(async (req) => {
     company_id?: string;
     role?: string;
     redirectOrigin?: string;
+    temp_password?: string;
   };
   try {
     body = await req.json();
@@ -65,6 +78,7 @@ Deno.serve(async (req) => {
   const companyId = body.company_id;
   const role = body.role;
   const redirectOrigin = body.redirectOrigin;
+  const tempPassword = body.temp_password;
 
   if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
     return json({ error: "A valid email is required" }, 400);
@@ -89,20 +103,58 @@ Deno.serve(async (req) => {
   const service = createClient(supabaseUrl, serviceRoleKey);
 
   // Does this email already have a BizLab account? If so this is a
-  // multi-company invite (requirement 7) — they just need the
-  // invitation row; they'll accept it from inside their existing
-  // session, no new auth.users row or email required.
+  // multi-company invite — they already have a password, so they just
+  // need the invitation row and accept it from inside their existing
+  // session via the accept-invite token flow, unchanged below.
   const { data: existingProfile } = await service
     .from("profiles")
     .select("id")
     .eq("email", email)
     .maybeSingle();
 
-  // The invitation row goes through asCaller so it's covered by the
-  // real "admins create invitations" RLS policy (has_min_role + the
-  // invited_by = auth.uid() check) instead of duplicating that logic
-  // here — this function does not get to decide who counts as an
-  // inviting admin, the database's own policy does.
+  if (!existingProfile) {
+    // Brand-new user: admin sets a temp password, the account is
+    // created immediately usable (no invite email/accept-flow needed),
+    // and they're added straight to company_members — the caller was
+    // already proven admin+ above, so there's no separate "acceptance"
+    // step to close. must_change_password=true (via raw_user_meta_data,
+    // read by handle_new_user() — see 0030_forced_password_change.sql)
+    // forces them to set their own password on first sign-in.
+    if (!tempPassword || tempPassword.length < 8) {
+      return json({ error: "A temporary password of at least 8 characters is required" }, 400);
+    }
+
+    const { data: created, error: createError } = await service.auth.admin.createUser({
+      email,
+      password: tempPassword,
+      email_confirm: true,
+      user_metadata: { full_name: fullName, must_change_password: true },
+    });
+    if (createError) return json({ error: createError.message }, 500);
+
+    const { error: memberError } = await service.from("company_members").insert({
+      company_id: companyId,
+      user_id: created.user.id,
+      role,
+      status: "active",
+      invited_by: callerData.user.id,
+      joined_at: new Date().toISOString(),
+    });
+    if (memberError) {
+      // Roll back the auth user rather than leave an orphaned account
+      // with no company membership at all.
+      await service.auth.admin.deleteUser(created.user.id);
+      return json({ error: memberError.message }, 500);
+    }
+
+    return json({ accountCreated: true });
+  }
+
+  // Existing user, new company: the invitation row goes through
+  // asCaller so it's covered by the real "admins create invitations"
+  // RLS policy (has_min_role + invited_by = auth.uid()) instead of
+  // duplicating that logic here — this function does not get to decide
+  // who counts as an inviting admin, the database's own policy does.
   const { data: invitation, error: inviteError } = await asCaller
     .from("company_invitations")
     .insert({ company_id: companyId, email, role, invited_by: callerData.user.id, full_name: fullName })
@@ -116,20 +168,5 @@ Deno.serve(async (req) => {
     return json({ error: inviteError.message }, 400);
   }
 
-  let accountCreated = false;
-  if (!existingProfile) {
-    const { error: inviteEmailError } = await service.auth.admin.inviteUserByEmail(email, {
-      data: { full_name: fullName },
-      redirectTo: `${redirectOrigin}/accept-invite?token=${invitation.token}`,
-    });
-    if (inviteEmailError) {
-      // Roll back the invitation row rather than leave an orphaned
-      // invite for an account that was never actually provisioned.
-      await asCaller.from("company_invitations").delete().eq("id", invitation.id);
-      return json({ error: `Could not send invite email: ${inviteEmailError.message}` }, 500);
-    }
-    accountCreated = true;
-  }
-
-  return json({ invitation, accountCreated });
+  return json({ invitation, accountCreated: false });
 });

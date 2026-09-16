@@ -67,6 +67,7 @@ export interface Profile {
   timezone: string;
   is_platform_admin: boolean;
   disabled_at: string | null;
+  must_change_password: boolean;
   created_at: string;
   updated_at: string;
 }

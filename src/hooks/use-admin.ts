@@ -162,7 +162,17 @@ export function usePlatformAuditLog() {
 export function useInviteUser() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async (input: { email: string; full_name: string; company_id: string; role: CompanyRole }) => {
+    mutationFn: async (input: {
+      email: string;
+      full_name: string;
+      company_id: string;
+      role: CompanyRole;
+      /** Required unless the email already has a BizLab account — see the
+       * invite-user edge function: a brand-new user gets this password
+       * directly rather than an invite email, and must change it on
+       * first sign-in (PasswordChangeGuard). */
+      temp_password?: string;
+    }) => {
       const { data, error } = await supabase.functions.invoke("invite-user", {
         body: { ...input, redirectOrigin: window.location.origin },
       });

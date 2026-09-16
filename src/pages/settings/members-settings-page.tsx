@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { toast } from "sonner";
-import { Link2, Mail, Trash2, UserPlus } from "lucide-react";
+import { Check, Copy, Link2, Mail, RefreshCw, Trash2, UserPlus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
@@ -29,9 +29,164 @@ import { useInviteUser } from "@/hooks/use-admin";
 import { usePermissions } from "@/hooks/use-permissions";
 import { useWorkspace } from "@/hooks/use-workspace";
 import { ROLE_LABELS } from "@/lib/permissions";
+import { generateTempPassword } from "@/lib/utils";
 import type { CompanyRole } from "@/types/database";
 
 const ROLES: CompanyRole[] = ["owner", "admin", "manager", "employee", "guest"];
+
+function InviteDialog({
+  open,
+  onOpenChange,
+  companyId,
+}: {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  companyId: string | undefined;
+}) {
+  const inviteUser = useInviteUser();
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
+  const [role, setRole] = useState<CompanyRole>("employee");
+  const [tempPassword, setTempPassword] = useState(generateTempPassword);
+  const [created, setCreated] = useState<{ email: string; password: string } | null>(null);
+  const [copied, setCopied] = useState(false);
+
+  function reset() {
+    setName("");
+    setEmail("");
+    setRole("employee");
+    setTempPassword(generateTempPassword());
+    setCreated(null);
+    setCopied(false);
+  }
+
+  async function handleInvite(e: React.FormEvent) {
+    e.preventDefault();
+    if (!companyId) return;
+    try {
+      const result = await inviteUser.mutateAsync({
+        email,
+        full_name: name,
+        company_id: companyId,
+        role,
+        temp_password: tempPassword,
+      });
+      if (result.accountCreated) {
+        setCreated({ email, password: tempPassword });
+      } else {
+        toast.success(`${email} already has a BizLab account — added to pending invitations`);
+        onOpenChange(false);
+        reset();
+      }
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Could not create the account");
+    }
+  }
+
+  return (
+    <Dialog
+      open={open}
+      onOpenChange={(next) => {
+        onOpenChange(next);
+        if (!next) reset();
+      }}
+    >
+      <DialogContent>
+        {created ? (
+          <>
+            <DialogHeader>
+              <DialogTitle>Account created</DialogTitle>
+            </DialogHeader>
+            <div className="flex flex-col gap-3">
+              <p className="text-sm text-muted-foreground">
+                Share this temporary password with <span className="font-medium text-foreground">{created.email}</span>{" "}
+                directly — they'll be asked to set their own the first time they sign in.
+              </p>
+              <div className="flex items-center gap-2 rounded-md border bg-muted/40 px-3 py-2 font-mono text-sm">
+                <span className="flex-1 select-all">{created.password}</span>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  className="size-7"
+                  onClick={async () => {
+                    await navigator.clipboard.writeText(created.password);
+                    setCopied(true);
+                    setTimeout(() => setCopied(false), 1500);
+                  }}
+                >
+                  {copied ? <Check className="size-3.5" /> : <Copy className="size-3.5" />}
+                </Button>
+              </div>
+            </div>
+            <DialogFooter>
+              <Button
+                onClick={() => {
+                  onOpenChange(false);
+                  reset();
+                }}
+              >
+                Done
+              </Button>
+            </DialogFooter>
+          </>
+        ) : (
+          <>
+            <DialogHeader>
+              <DialogTitle>Invite a team member</DialogTitle>
+            </DialogHeader>
+            <form onSubmit={handleInvite} className="flex flex-col gap-4">
+              <Input required placeholder="Full name" value={name} onChange={(e) => setName(e.target.value)} />
+              <Input
+                type="email"
+                required
+                placeholder="teammate@company.com"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+              />
+              <Select value={role} onValueChange={(v) => setRole(v as CompanyRole)}>
+                <SelectTrigger className="w-full"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  {ROLES.filter((r) => r !== "owner").map((r) => (
+                    <SelectItem key={r} value={r}>{ROLE_LABELS[r]}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <div className="flex flex-col gap-1.5">
+                <div className="flex items-center justify-between">
+                  <label className="text-xs font-medium text-muted-foreground">Temporary password</label>
+                  <button
+                    type="button"
+                    onClick={() => setTempPassword(generateTempPassword())}
+                    className="flex items-center gap-1 text-xs font-medium text-primary hover:underline"
+                  >
+                    <RefreshCw className="size-3" /> Generate new
+                  </button>
+                </div>
+                <Input
+                  required
+                  minLength={8}
+                  value={tempPassword}
+                  onChange={(e) => setTempPassword(e.target.value)}
+                  className="font-mono"
+                />
+                <p className="text-xs text-muted-foreground">
+                  They'll sign in with this and set their own password on first login. This account already has
+                  no invite email to lose — share the password with them directly.
+                </p>
+              </div>
+              <DialogFooter>
+                <Button type="submit" disabled={inviteUser.isPending}>
+                  {inviteUser.isPending ? "Creating…" : "Create account"}
+                </Button>
+              </DialogFooter>
+            </form>
+          </>
+        )}
+      </DialogContent>
+    </Dialog>
+  );
+}
 
 export function MembersSettingsPage() {
   const { company } = useWorkspace();
@@ -39,31 +194,11 @@ export function MembersSettingsPage() {
   const { data: invitations } = usePendingInvitations();
   const updateRole = useUpdateMemberRole();
   const removeMember = useRemoveMember();
-  const inviteUser = useInviteUser();
   const { can, hasMinRole } = usePermissions();
 
   const [inviteOpen, setInviteOpen] = useState(false);
-  const [name, setName] = useState("");
-  const [email, setEmail] = useState("");
-  const [role, setRole] = useState<CompanyRole>("employee");
 
   const canManage = can("members", "edit");
-
-  async function handleInvite(e: React.FormEvent) {
-    e.preventDefault();
-    if (!company) return;
-    try {
-      const result = await inviteUser.mutateAsync({ email, full_name: name, company_id: company.id, role });
-      toast.success(
-        result.accountCreated ? `Invitation sent to ${email}` : `${email} already has a BizLab account — added to pending invitations`
-      );
-      setName("");
-      setEmail("");
-      setInviteOpen(false);
-    } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Could not send invitation");
-    }
-  }
 
   return (
     <div className="flex max-w-3xl flex-col gap-6">
@@ -114,8 +249,8 @@ export function MembersSettingsPage() {
         <div>
           <h3 className="mb-2 text-sm font-semibold">Pending invitations</h3>
           <p className="mb-2 text-xs text-muted-foreground">
-            New teammates get an email automatically. If someone already has a BizLab account for
-            another company, share this link with them directly instead.
+            These are people who already have a BizLab account elsewhere — share this link with them directly to
+            join this company too.
           </p>
           <div className="overflow-hidden rounded-lg border">
             {invitations.map((inv) => (
@@ -140,39 +275,7 @@ export function MembersSettingsPage() {
         </div>
       )}
 
-      <Dialog open={inviteOpen} onOpenChange={setInviteOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Invite a team member</DialogTitle>
-          </DialogHeader>
-          <form onSubmit={handleInvite} className="flex flex-col gap-4">
-            <Input
-              required
-              placeholder="Full name"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-            />
-            <Input
-              type="email"
-              required
-              placeholder="teammate@company.com"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-            />
-            <Select value={role} onValueChange={(v) => setRole(v as CompanyRole)}>
-              <SelectTrigger className="w-full"><SelectValue /></SelectTrigger>
-              <SelectContent>
-                {ROLES.filter((r) => r !== "owner").map((r) => (
-                  <SelectItem key={r} value={r}>{ROLE_LABELS[r]}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            <DialogFooter>
-              <Button type="submit" disabled={inviteUser.isPending}>Send invitation</Button>
-            </DialogFooter>
-          </form>
-        </DialogContent>
-      </Dialog>
+      <InviteDialog open={inviteOpen} onOpenChange={setInviteOpen} companyId={company?.id} />
     </div>
   );
 }

@@ -8,6 +8,7 @@ import { QueryProvider } from "@/providers/query-provider";
 import { ThemeProvider } from "@/providers/theme-provider";
 import { WorkspaceProvider } from "@/providers/workspace-provider";
 import { RequireAuth } from "@/routes/require-auth";
+import { PasswordChangeGuard } from "@/routes/password-change-guard";
 import { MfaGuard } from "@/routes/mfa-guard";
 import { WorkspaceLayout } from "@/components/layout/workspace-layout";
 import { HomePage } from "@/pages/home";
@@ -87,42 +88,44 @@ export default function App() {
                   <Route path="/accept-invite" element={<AcceptInvitePage />} />
 
                   <Route element={<RequireAuth />}>
-                    <Route element={<MfaGuard />}>
-                      <Route path="/workspaces" element={<WorkspacePicker />} />
+                    <Route element={<PasswordChangeGuard />}>
+                      <Route element={<MfaGuard />}>
+                        <Route path="/workspaces" element={<WorkspacePicker />} />
 
-                      <Route
-                        path="/w/:slug"
-                        element={
-                          <WorkspaceProvider>
-                            <WorkspaceLayout />
-                          </WorkspaceProvider>
-                        }
-                      >
-                        <Route index element={<WorkspaceHomePage />} />
-                        <Route path="my-work" element={<MyWorkPage />} />
-                        <Route path="companies" element={<CompaniesPage />} />
-                        <Route path="command-center" element={<CommandCenterPage />} />
-                        {/* Dashboards was folded into Home — redirect old bookmarks/links instead of 404ing. */}
-                        <Route path="dashboards" element={<Navigate to=".." replace />} />
-                        <Route path="tasks" element={<TasksPage />} />
-                        <Route path="projects" element={<ProjectsPage />} />
-                        <Route path="projects/:projectId" element={<ProjectDetailPage />} />
-                        <Route path="documents" element={<DocumentsPage />} />
-                        <Route path="documents/:documentId" element={<DocumentEditorPage />} />
-                        <Route path="files" element={<FilesPage />} />
-                        <Route path="files/:fileId" element={<FileEditorPage />} />
-                        <Route path="chat" element={<ChatPage />} />
-                        <Route path="chat/:channelId" element={<ChatPage />} />
-                        <Route path="knowledge" element={<KnowledgePage />} />
-                        <Route path="knowledge/:articleId" element={<KnowledgeArticlePage />} />
-                        <Route path="notifications" element={<NotificationsPage />} />
-                        <Route path="search" element={<SearchPage />} />
-                        <Route path="settings" element={<SettingsLayout />}>
-                          <Route index element={<Navigate to="general" replace />} />
-                          <Route path="general" element={<GeneralSettingsPage />} />
-                          <Route path="members" element={<MembersSettingsPage />} />
-                          <Route path="security" element={<SecuritySettingsPage />} />
-                          <Route path="administration" element={<AdministrationPage />} />
+                        <Route
+                          path="/w/:slug"
+                          element={
+                            <WorkspaceProvider>
+                              <WorkspaceLayout />
+                            </WorkspaceProvider>
+                          }
+                        >
+                          <Route index element={<WorkspaceHomePage />} />
+                          <Route path="my-work" element={<MyWorkPage />} />
+                          <Route path="companies" element={<CompaniesPage />} />
+                          <Route path="command-center" element={<CommandCenterPage />} />
+                          {/* Dashboards was folded into Home — redirect old bookmarks/links instead of 404ing. */}
+                          <Route path="dashboards" element={<Navigate to=".." replace />} />
+                          <Route path="tasks" element={<TasksPage />} />
+                          <Route path="projects" element={<ProjectsPage />} />
+                          <Route path="projects/:projectId" element={<ProjectDetailPage />} />
+                          <Route path="documents" element={<DocumentsPage />} />
+                          <Route path="documents/:documentId" element={<DocumentEditorPage />} />
+                          <Route path="files" element={<FilesPage />} />
+                          <Route path="files/:fileId" element={<FileEditorPage />} />
+                          <Route path="chat" element={<ChatPage />} />
+                          <Route path="chat/:channelId" element={<ChatPage />} />
+                          <Route path="knowledge" element={<KnowledgePage />} />
+                          <Route path="knowledge/:articleId" element={<KnowledgeArticlePage />} />
+                          <Route path="notifications" element={<NotificationsPage />} />
+                          <Route path="search" element={<SearchPage />} />
+                          <Route path="settings" element={<SettingsLayout />}>
+                            <Route index element={<Navigate to="general" replace />} />
+                            <Route path="general" element={<GeneralSettingsPage />} />
+                            <Route path="members" element={<MembersSettingsPage />} />
+                            <Route path="security" element={<SecuritySettingsPage />} />
+                            <Route path="administration" element={<AdministrationPage />} />
+                          </Route>
                         </Route>
                       </Route>
                     </Route>
