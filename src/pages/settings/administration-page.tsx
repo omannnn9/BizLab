@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
 import { formatDistanceToNow } from "date-fns";
 import { toast } from "sonner";
 import { Ban, Building2, HardDrive, Loader2, Plus, ShieldAlert, ShieldCheck, UserCog, UserPlus, Users } from "lucide-react";
@@ -347,7 +348,7 @@ function CompaniesTab() {
                 <HardDrive className="size-3.5" /> Storage limit
               </Button>
               <Button variant="outline" size="sm" asChild>
-                <a href={`/w/${c.slug}/settings/members`}>Manage members</a>
+                <Link to={`/w/${c.slug}/settings/members`}>Manage members</Link>
               </Button>
             </div>
           ))}
