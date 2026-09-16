@@ -33,8 +33,29 @@ export function useUpdateMilestone(projectId: string) {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async ({ id, status }: { id: string; status: MilestoneStatus }) => {
-      const { error } = await supabase.from("milestones").update({ status }).eq("id", id);
+      // RLS ("managers+ manage milestones") silently filters an
+      // unauthorized UPDATE to zero rows instead of erroring, so the
+      // checkbox would appear to toggle, then snap back on the next
+      // refetch with no explanation — check the row actually changed.
+      const { data, error } = await supabase.from("milestones").update({ status }).eq("id", id).select("id");
       if (error) throw error;
+      if (!data || data.length === 0) {
+        throw new Error("You don't have permission to update this milestone.");
+      }
+    },
+    onSuccess: () => void queryClient.invalidateQueries({ queryKey: ["milestones", projectId] }),
+  });
+}
+
+export function useDeleteMilestone(projectId: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const { data, error } = await supabase.from("milestones").delete().eq("id", id).select("id");
+      if (error) throw error;
+      if (!data || data.length === 0) {
+        throw new Error("You don't have permission to delete this milestone.");
+      }
     },
     onSuccess: () => void queryClient.invalidateQueries({ queryKey: ["milestones", projectId] }),
   });

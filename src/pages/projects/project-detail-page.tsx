@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { Plus, Trash2 } from "lucide-react";
+import { Plus, Trash2, X } from "lucide-react";
 import { toast } from "sonner";
 import { PageHeader } from "@/components/shared/page-header";
 import { Button } from "@/components/ui/button";
@@ -15,7 +15,7 @@ import { TaskDialog } from "@/components/tasks/task-dialog";
 import { EntityLoadGuard } from "@/components/shared/entity-load-guard";
 import { useDeleteProject, useProject } from "@/hooks/use-projects";
 import { useTasks } from "@/hooks/use-tasks";
-import { useCreateMilestone, useMilestones, useUpdateMilestone } from "@/hooks/use-milestones";
+import { useCreateMilestone, useDeleteMilestone, useMilestones, useUpdateMilestone } from "@/hooks/use-milestones";
 import { usePermissions } from "@/hooks/use-permissions";
 import { useWorkspace } from "@/hooks/use-workspace";
 import type { Task } from "@/types/database";
@@ -27,10 +27,31 @@ export function ProjectDetailPage() {
   const { data: milestones } = useMilestones(projectId);
   const createMilestone = useCreateMilestone(projectId!);
   const updateMilestone = useUpdateMilestone(projectId!);
+  const deleteMilestone = useDeleteMilestone(projectId!);
   const deleteProject = useDeleteProject();
   const { can } = usePermissions();
   const { company } = useWorkspace();
   const navigate = useNavigate();
+
+  // Mirrors "managers+ manage milestones" RLS — reuse the projects.edit
+  // threshold (also "manager"), since milestones live under a project.
+  const canManageMilestones = can("projects", "edit");
+
+  async function handleToggleMilestone(id: string, checked: boolean) {
+    try {
+      await updateMilestone.mutateAsync({ id, status: checked ? "completed" : "upcoming" });
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Could not update milestone");
+    }
+  }
+
+  async function handleDeleteMilestone(id: string) {
+    try {
+      await deleteMilestone.mutateAsync(id);
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Could not delete milestone");
+    }
+  }
 
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingTask, setEditingTask] = useState<Task | undefined>();
@@ -151,38 +172,51 @@ export function ProjectDetailPage() {
         </TabsContent>
 
         <TabsContent value="milestones" className="flex-1 overflow-y-auto px-6 py-4">
-          <form
-            className="mb-4 flex gap-2"
-            onSubmit={async (e) => {
-              e.preventDefault();
-              if (!milestoneName.trim()) return;
-              await createMilestone.mutateAsync({ name: milestoneName });
-              setMilestoneName("");
-            }}
-          >
-            <Input
-              value={milestoneName}
-              onChange={(e) => setMilestoneName(e.target.value)}
-              placeholder="Add a milestone…"
-            />
-            <Button type="submit">Add</Button>
-          </form>
+          {canManageMilestones && (
+            <form
+              className="mb-4 flex gap-2"
+              onSubmit={async (e) => {
+                e.preventDefault();
+                if (!milestoneName.trim()) return;
+                try {
+                  await createMilestone.mutateAsync({ name: milestoneName });
+                  setMilestoneName("");
+                } catch (err) {
+                  toast.error(err instanceof Error ? err.message : "Could not create milestone");
+                }
+              }}
+            >
+              <Input
+                value={milestoneName}
+                onChange={(e) => setMilestoneName(e.target.value)}
+                placeholder="Add a milestone…"
+              />
+              <Button type="submit" disabled={createMilestone.isPending}>Add</Button>
+            </form>
+          )}
           <div className="flex flex-col gap-2">
             {milestones?.map((m) => (
-              <label
-                key={m.id}
-                className="flex items-center gap-3 rounded-lg border px-3 py-2.5 text-sm"
-              >
-                <Checkbox
-                  checked={m.status === "completed"}
-                  onCheckedChange={(checked) =>
-                    updateMilestone.mutate({ id: m.id, status: checked ? "completed" : "upcoming" })
-                  }
-                />
-                <span className={m.status === "completed" ? "text-muted-foreground line-through" : ""}>
-                  {m.name}
-                </span>
-              </label>
+              <div key={m.id} className="group flex items-center gap-3 rounded-lg border px-3 py-2.5 text-sm">
+                <label className="flex flex-1 items-center gap-3">
+                  <Checkbox
+                    checked={m.status === "completed"}
+                    disabled={!canManageMilestones}
+                    onCheckedChange={(checked) => void handleToggleMilestone(m.id, checked === true)}
+                  />
+                  <span className={m.status === "completed" ? "text-muted-foreground line-through" : ""}>
+                    {m.name}
+                  </span>
+                </label>
+                {canManageMilestones && (
+                  <button
+                    onClick={() => void handleDeleteMilestone(m.id)}
+                    className="rounded-full p-0.5 text-muted-foreground opacity-0 transition-opacity hover:bg-muted hover:text-destructive group-hover:opacity-100"
+                    title="Delete milestone"
+                  >
+                    <X className="size-3.5" />
+                  </button>
+                )}
+              </div>
             ))}
             {(!milestones || milestones.length === 0) && (
               <p className="text-sm text-muted-foreground">No milestones yet.</p>
