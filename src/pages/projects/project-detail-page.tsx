@@ -124,7 +124,7 @@ export function ProjectDetailPage() {
       </div>
 
       <Tabs defaultValue="tasks" className="flex flex-1 flex-col overflow-hidden">
-        <div className="flex items-center justify-between px-6 pt-3">
+        <div className="flex flex-col gap-2 px-6 pt-3 sm:flex-row sm:items-center sm:justify-between">
           <TabsList>
             <TabsTrigger value="tasks">Tasks</TabsTrigger>
             <TabsTrigger value="milestones">Milestones</TabsTrigger>
@@ -210,7 +210,7 @@ export function ProjectDetailPage() {
                 {canManageMilestones && (
                   <button
                     onClick={() => void handleDeleteMilestone(m.id)}
-                    className="rounded-full p-0.5 text-muted-foreground opacity-0 transition-opacity hover:bg-muted hover:text-destructive group-hover:opacity-100"
+                    className="rounded-full p-0.5 text-muted-foreground opacity-100 transition-opacity hover:bg-muted hover:text-destructive sm:opacity-0 sm:group-hover:opacity-100"
                     title="Delete milestone"
                   >
                     <X className="size-3.5" />

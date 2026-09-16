@@ -67,7 +67,7 @@ export function QuickLinksWidget({
               {canEdit && (
                 <button
                   onClick={() => handleRemove(link.id)}
-                  className="absolute right-1 top-1/2 -translate-y-1/2 rounded-full p-0.5 text-muted-foreground opacity-0 transition-opacity hover:bg-muted group-hover:opacity-100"
+                  className="absolute right-1 top-1/2 -translate-y-1/2 rounded-full p-0.5 text-muted-foreground opacity-100 transition-opacity hover:bg-muted sm:opacity-0 sm:group-hover:opacity-100"
                   title="Remove link"
                 >
                   <X className="size-3" />

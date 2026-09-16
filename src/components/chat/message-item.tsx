@@ -166,7 +166,7 @@ export function MessageItem({
       </div>
 
       {!isDeleted && (
-        <div className="flex h-fit items-center gap-0.5 opacity-0 transition-opacity group-hover:opacity-100">
+        <div className="flex h-fit shrink-0 items-center gap-0.5 opacity-100 transition-opacity sm:opacity-0 sm:group-hover:opacity-100">
           {onOpenThread && (
             <Button variant="ghost" size="icon" className="size-7" onClick={onOpenThread} title="Reply in thread">
               <MessageSquare className="size-3.5" />

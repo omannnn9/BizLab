@@ -240,7 +240,7 @@ export function FilesPage() {
                 <Button
                   variant="ghost"
                   size="icon"
-                  className="size-6 shrink-0 opacity-0 group-hover:opacity-100"
+                  className="size-6 shrink-0 opacity-100 sm:opacity-0 sm:group-hover:opacity-100"
                   onClick={() => setShareFolderId(f.id)}
                 >
                   <Share2 className="size-3.5" />
@@ -323,7 +323,7 @@ export function FilesPage() {
           {isLoading ? (
             <Skeleton className="h-40" />
           ) : files && files.length > 0 ? (
-            <div className="overflow-hidden rounded-lg border">
+            <div className="overflow-x-auto rounded-lg border">
               <table className="w-full text-sm">
                 <thead className="bg-muted/40 text-left text-xs text-muted-foreground">
                   <tr>

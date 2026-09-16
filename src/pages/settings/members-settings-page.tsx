@@ -254,13 +254,19 @@ export function MembersSettingsPage() {
           </p>
           <div className="overflow-hidden rounded-lg border">
             {invitations.map((inv) => (
-              <div key={inv.id} className="flex items-center gap-3 border-b px-4 py-3 last:border-b-0">
-                <Mail className="size-4 text-muted-foreground" />
-                <span className="flex-1 text-sm">{inv.email}</span>
-                <Badge variant="outline">{ROLE_LABELS[inv.role]}</Badge>
+              <div
+                key={inv.id}
+                className="flex flex-col gap-2 border-b px-4 py-3 last:border-b-0 sm:flex-row sm:items-center sm:gap-3"
+              >
+                <div className="flex min-w-0 flex-1 items-center gap-3">
+                  <Mail className="size-4 shrink-0 text-muted-foreground" />
+                  <span className="min-w-0 flex-1 truncate text-sm">{inv.email}</span>
+                  <Badge variant="outline" className="shrink-0">{ROLE_LABELS[inv.role]}</Badge>
+                </div>
                 <Button
                   variant="ghost"
                   size="sm"
+                  className="shrink-0 self-end sm:self-auto"
                   onClick={() => {
                     const link = `${window.location.origin}/accept-invite?token=${inv.token}`;
                     void navigator.clipboard.writeText(link);

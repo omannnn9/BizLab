@@ -20,7 +20,7 @@ export function TaskListView({ tasks, onTaskClick }: { tasks: Task[]; onTaskClic
 
   return (
     <div className="px-6 py-4">
-      <div className="overflow-hidden rounded-lg border">
+      <div className="overflow-x-auto rounded-lg border">
         <table className="w-full text-sm">
           <thead className="bg-muted/40 text-left text-xs text-muted-foreground">
             <tr>

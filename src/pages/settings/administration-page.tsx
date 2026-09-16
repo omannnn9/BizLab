@@ -148,40 +148,44 @@ function PeopleTab() {
 
       <div className="overflow-hidden rounded-lg border">
         {profiles?.map((p) => (
-          <div key={p.id} className="flex items-center gap-3 border-b px-4 py-3 last:border-b-0">
-            <Avatar>
-              <AvatarFallback>{(p.full_name ?? p.email)[0]}</AvatarFallback>
-            </Avatar>
-            <div className="min-w-0 flex-1">
-              <div className="flex items-center gap-2">
-                <p className="truncate text-sm font-medium">{p.full_name ?? "Unnamed"}</p>
-                {p.is_platform_admin && (
-                  <Badge variant="outline" className="gap-1 text-primary">
-                    <ShieldCheck className="size-3" /> Platform admin
-                  </Badge>
-                )}
-                {p.disabled_at && <Badge variant="destructive">Disabled</Badge>}
+          <div key={p.id} className="flex flex-col gap-2.5 border-b px-4 py-3 last:border-b-0 sm:flex-row sm:items-center">
+            <div className="flex min-w-0 flex-1 items-center gap-3">
+              <Avatar>
+                <AvatarFallback>{(p.full_name ?? p.email)[0]}</AvatarFallback>
+              </Avatar>
+              <div className="min-w-0 flex-1">
+                <div className="flex flex-wrap items-center gap-2">
+                  <p className="truncate text-sm font-medium">{p.full_name ?? "Unnamed"}</p>
+                  {p.is_platform_admin && (
+                    <Badge variant="outline" className="gap-1 text-primary">
+                      <ShieldCheck className="size-3" /> Platform admin
+                    </Badge>
+                  )}
+                  {p.disabled_at && <Badge variant="destructive">Disabled</Badge>}
+                </div>
+                <p className="truncate text-xs text-muted-foreground">{p.email}</p>
               </div>
-              <p className="truncate text-xs text-muted-foreground">{p.email}</p>
             </div>
-            <Button
-              variant="ghost"
-              size="sm"
-              disabled={setPlatformAdmin.isPending}
-              onClick={() => void handleToggleAdmin(p.id, !p.is_platform_admin)}
-            >
-              <UserCog className="size-3.5" />
-              {p.is_platform_admin ? "Revoke admin" : "Make admin"}
-            </Button>
-            <Button
-              variant="ghost"
-              size="sm"
-              disabled={setDisabled.isPending || p.id === user?.id}
-              onClick={() => void handleToggleDisabled(p.id, !p.disabled_at)}
-            >
-              <Ban className="size-3.5" />
-              {p.disabled_at ? "Reactivate" : "Disable"}
-            </Button>
+            <div className="flex shrink-0 items-center gap-1 self-end sm:self-auto">
+              <Button
+                variant="ghost"
+                size="sm"
+                disabled={setPlatformAdmin.isPending}
+                onClick={() => void handleToggleAdmin(p.id, !p.is_platform_admin)}
+              >
+                <UserCog className="size-3.5" />
+                {p.is_platform_admin ? "Revoke admin" : "Make admin"}
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                disabled={setDisabled.isPending || p.id === user?.id}
+                onClick={() => void handleToggleDisabled(p.id, !p.disabled_at)}
+              >
+                <Ban className="size-3.5" />
+                {p.disabled_at ? "Reactivate" : "Disable"}
+              </Button>
+            </div>
           </div>
         ))}
       </div>
@@ -436,23 +440,27 @@ function CompaniesTab() {
       ) : (
         <div className="overflow-hidden rounded-lg border">
           {companies?.map((c) => (
-            <div key={c.id} className="flex items-center gap-3 border-b px-4 py-3 last:border-b-0">
-              <div className="flex size-9 items-center justify-center rounded-lg bg-primary/10 text-primary">
-                <Building2 className="size-4" />
+            <div key={c.id} className="flex flex-col gap-2.5 border-b px-4 py-3 last:border-b-0 sm:flex-row sm:items-center">
+              <div className="flex min-w-0 flex-1 items-center gap-3">
+                <div className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
+                  <Building2 className="size-4" />
+                </div>
+                <div className="min-w-0 flex-1">
+                  <p className="truncate text-sm font-medium">{c.name}</p>
+                  <p className="truncate text-xs text-muted-foreground">
+                    {c.industry ?? "No industry set"} · {c.member_count} member{c.member_count === 1 ? "" : "s"} ·{" "}
+                    {formatBytes(c.storage_quota_bytes)} storage limit
+                  </p>
+                </div>
               </div>
-              <div className="min-w-0 flex-1">
-                <p className="truncate text-sm font-medium">{c.name}</p>
-                <p className="truncate text-xs text-muted-foreground">
-                  {c.industry ?? "No industry set"} · {c.member_count} member{c.member_count === 1 ? "" : "s"} ·{" "}
-                  {formatBytes(c.storage_quota_bytes)} storage limit
-                </p>
+              <div className="flex shrink-0 items-center gap-1 self-end sm:self-auto">
+                <Button variant="outline" size="sm" onClick={() => setQuotaCompany(c)}>
+                  <HardDrive className="size-3.5" /> Storage limit
+                </Button>
+                <Button variant="outline" size="sm" asChild>
+                  <Link to={`/w/${c.slug}/settings/members`}>Manage members</Link>
+                </Button>
               </div>
-              <Button variant="outline" size="sm" onClick={() => setQuotaCompany(c)}>
-                <HardDrive className="size-3.5" /> Storage limit
-              </Button>
-              <Button variant="outline" size="sm" asChild>
-                <Link to={`/w/${c.slug}/settings/members`}>Manage members</Link>
-              </Button>
             </div>
           ))}
         </div>
@@ -518,9 +526,12 @@ function SecurityTab() {
       ) : (
         <div className="overflow-hidden rounded-lg border">
           {entries.map((e) => (
-            <div key={e.id} className="flex items-center gap-3 border-b px-4 py-2.5 text-sm last:border-b-0">
+            <div
+              key={e.id}
+              className="flex flex-wrap items-center gap-x-3 gap-y-1 border-b px-4 py-2.5 text-sm last:border-b-0"
+            >
               <span className="font-mono text-xs text-muted-foreground">{e.action}</span>
-              <span className="flex-1 truncate text-muted-foreground">
+              <span className="min-w-0 flex-1 truncate text-muted-foreground">
                 {e.actor?.full_name ?? e.actor?.email ?? "system"}
               </span>
               <span className="shrink-0 text-xs text-muted-foreground">

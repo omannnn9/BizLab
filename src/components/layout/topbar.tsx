@@ -31,7 +31,7 @@ export function Topbar() {
           <Input
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder="Search tasks, docs, files, people…"
+            placeholder="Search tasks, projects, files, people…"
             className="pl-8"
           />
         </div>

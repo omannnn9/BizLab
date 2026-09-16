@@ -17,14 +17,14 @@ export function SettingsLayout() {
     <div className="flex h-full flex-col">
       <PageHeader title="Workspace settings" description="Manage your company, team and subscription." />
       <div className="border-b px-6">
-        <nav className="flex gap-1">
+        <nav className="flex gap-1 overflow-x-auto">
           {tabs.map((tab) => (
             <NavLink
               key={tab.to}
               to={tab.to}
               className={({ isActive }) =>
                 cn(
-                  "border-b-2 px-3 py-2.5 text-sm font-medium transition-colors",
+                  "shrink-0 border-b-2 px-3 py-2.5 text-sm font-medium whitespace-nowrap transition-colors",
                   isActive
                     ? "border-primary text-foreground"
                     : "border-transparent text-muted-foreground hover:text-foreground"
