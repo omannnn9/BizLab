@@ -137,6 +137,26 @@ export function useSetPlatformAdmin() {
   });
 }
 
+/**
+ * Fully deletes an account: auth.users row, profile, every company
+ * membership. Content they created elsewhere (tasks, files, chat
+ * messages, ...) survives, unattributed — see migration 0032 and
+ * supabase/functions/delete-user. Goes through an edge function for
+ * the same reason invite-user does: only the service-role Admin API
+ * can touch auth.users, which an RLS-scoped client never can.
+ */
+export function useDeleteUser() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (userId: string) => {
+      const { data, error } = await supabase.functions.invoke("delete-user", { body: { user_id: userId } });
+      if (error) throw error;
+      if (data?.error) throw new Error(data.error);
+    },
+    onSuccess: () => void queryClient.invalidateQueries({ queryKey: ["admin-all-profiles"] }),
+  });
+}
+
 export function usePlatformAuditLog() {
   return useQuery({
     queryKey: ["admin-audit-log"],

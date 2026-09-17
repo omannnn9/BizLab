@@ -5,16 +5,16 @@ import { toast } from "sonner";
 import {
   Ban,
   Building2,
-  Check,
-  Copy,
   HardDrive,
   Loader2,
   Plus,
-  RefreshCw,
   ShieldAlert,
   ShieldCheck,
+  Trash2,
   UserCog,
+  UserCheck,
   UserPlus,
+  UserX,
   Users,
 } from "lucide-react";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
@@ -31,25 +31,24 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { EmptyState } from "@/components/shared/empty-state";
+import { CreateAccountDialog } from "@/components/settings/create-account-dialog";
 import { useAuth } from "@/hooks/use-auth";
 import {
   useAllCompanies,
   useAllProfiles,
   useCreateCompany,
-  useInviteUser,
+  useDeleteUser,
   usePlatformAuditLog,
   useSetPlatformAdmin,
   useSetUserDisabled,
   useUpdateCompanyStorageQuota,
   type AdminCompany,
 } from "@/hooks/use-admin";
+import { useAccessRequests, useReviewAccessRequest } from "@/hooks/use-access-requests";
 import { ROLE_DESCRIPTIONS, ROLE_LABELS, PERMISSION_MATRIX } from "@/lib/permissions";
-import { formatBytes, generateTempPassword } from "@/lib/utils";
-import type { CompanyRole } from "@/types/database";
-
-const ROLES: CompanyRole[] = ["owner", "admin", "manager", "employee", "guest"];
+import { formatBytes } from "@/lib/utils";
+import type { CompanyRole, Profile } from "@/types/database";
 
 function PeopleTab() {
   const { data: profiles, isLoading } = useAllProfiles();
@@ -57,7 +56,7 @@ function PeopleTab() {
   const { user } = useAuth();
   const setDisabled = useSetUserDisabled();
   const setPlatformAdmin = useSetPlatformAdmin();
-  const inviteUser = useInviteUser();
+  const deleteUser = useDeleteUser();
 
   async function handleToggleAdmin(targetId: string, nextIsAdmin: boolean) {
     try {
@@ -82,50 +81,28 @@ function PeopleTab() {
     }
   }
 
-  const [inviteOpen, setInviteOpen] = useState(false);
-  const [name, setName] = useState("");
-  const [email, setEmail] = useState("");
-  const [companyId, setCompanyId] = useState<string>();
-  const [role, setRole] = useState<CompanyRole>("employee");
-  const [tempPassword, setTempPassword] = useState(generateTempPassword);
-  const [created, setCreated] = useState<{ email: string; password: string } | null>(null);
-  const [copied, setCopied] = useState(false);
-
-  function resetInvite() {
-    setName("");
-    setEmail("");
-    setCompanyId(undefined);
-    setRole("employee");
-    setTempPassword(generateTempPassword());
-    setCreated(null);
-    setCopied(false);
-  }
-
-  async function handleInvite(e: React.FormEvent) {
-    e.preventDefault();
-    if (!companyId) {
-      toast.error("Choose a company");
+  async function handleDelete(target: Profile) {
+    if (target.id === user?.id) {
+      toast.error("You can't delete your own account.");
+      return;
+    }
+    const name = target.full_name ?? target.email;
+    if (
+      !window.confirm(
+        `Permanently delete ${name}'s BizLab account? This removes their login and every company membership immediately and can't be undone. To come back, they'd need to be invited again from scratch.`
+      )
+    ) {
       return;
     }
     try {
-      const result = await inviteUser.mutateAsync({
-        email,
-        full_name: name,
-        company_id: companyId,
-        role,
-        temp_password: tempPassword,
-      });
-      if (result.accountCreated) {
-        setCreated({ email, password: tempPassword });
-      } else {
-        toast.success(`${email} already has an account — invitation added`);
-        setInviteOpen(false);
-        resetInvite();
-      }
+      await deleteUser.mutateAsync(target.id);
+      toast.success(`${name}'s account was deleted`);
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Could not create the account");
+      toast.error(err instanceof Error ? err.message : "Could not delete this account");
     }
   }
+
+  const [inviteOpen, setInviteOpen] = useState(false);
 
   if (isLoading) {
     return (
@@ -185,141 +162,22 @@ function PeopleTab() {
                 <Ban className="size-3.5" />
                 {p.disabled_at ? "Reactivate" : "Disable"}
               </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="text-destructive hover:text-destructive"
+                disabled={deleteUser.isPending || p.id === user?.id}
+                onClick={() => void handleDelete(p)}
+              >
+                <Trash2 className="size-3.5" />
+                Delete
+              </Button>
             </div>
           </div>
         ))}
       </div>
 
-      <Dialog
-        open={inviteOpen}
-        onOpenChange={(next) => {
-          setInviteOpen(next);
-          if (!next) resetInvite();
-        }}
-      >
-        <DialogContent>
-          {created ? (
-            <>
-              <DialogHeader>
-                <DialogTitle>Account created</DialogTitle>
-              </DialogHeader>
-              <div className="flex flex-col gap-3">
-                <p className="text-sm text-muted-foreground">
-                  Share this temporary password with <span className="font-medium text-foreground">{created.email}</span>{" "}
-                  directly — they'll be asked to set their own the first time they sign in.
-                </p>
-                <div className="flex items-center gap-2 rounded-md border bg-muted/40 px-3 py-2 font-mono text-sm">
-                  <span className="flex-1 select-all">{created.password}</span>
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="icon"
-                    className="size-7"
-                    onClick={async () => {
-                      await navigator.clipboard.writeText(created.password);
-                      setCopied(true);
-                      setTimeout(() => setCopied(false), 1500);
-                    }}
-                  >
-                    {copied ? <Check className="size-3.5" /> : <Copy className="size-3.5" />}
-                  </Button>
-                </div>
-              </div>
-              <DialogFooter>
-                <Button
-                  onClick={() => {
-                    setInviteOpen(false);
-                    resetInvite();
-                  }}
-                >
-                  Done
-                </Button>
-              </DialogFooter>
-            </>
-          ) : (
-            <>
-              <DialogHeader>
-                <DialogTitle>Invite a user</DialogTitle>
-              </DialogHeader>
-              <form onSubmit={handleInvite} className="flex flex-col gap-4">
-                <div className="flex flex-col gap-1.5">
-                  <Label htmlFor="invite-name">Name</Label>
-                  <Input id="invite-name" required value={name} onChange={(e) => setName(e.target.value)} />
-                </div>
-                <div className="flex flex-col gap-1.5">
-                  <Label htmlFor="invite-email">Email</Label>
-                  <Input
-                    id="invite-email"
-                    type="email"
-                    required
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    placeholder="name@company.com"
-                  />
-                </div>
-                <div className="flex flex-col gap-1.5">
-                  <Label>Company</Label>
-                  <Select value={companyId} onValueChange={setCompanyId}>
-                    <SelectTrigger className="w-full">
-                      <SelectValue placeholder="Choose a company" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {companies?.map((c) => (
-                        <SelectItem key={c.id} value={c.id}>
-                          {c.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="flex flex-col gap-1.5">
-                  <Label>Role</Label>
-                  <Select value={role} onValueChange={(v) => setRole(v as CompanyRole)}>
-                    <SelectTrigger className="w-full">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {ROLES.map((r) => (
-                        <SelectItem key={r} value={r}>
-                          {ROLE_LABELS[r]}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="flex flex-col gap-1.5">
-                  <div className="flex items-center justify-between">
-                    <Label>Temporary password</Label>
-                    <button
-                      type="button"
-                      onClick={() => setTempPassword(generateTempPassword())}
-                      className="flex items-center gap-1 text-xs font-medium text-primary hover:underline"
-                    >
-                      <RefreshCw className="size-3" /> Generate new
-                    </button>
-                  </div>
-                  <Input
-                    required
-                    minLength={8}
-                    value={tempPassword}
-                    onChange={(e) => setTempPassword(e.target.value)}
-                    className="font-mono"
-                  />
-                  <p className="text-xs text-muted-foreground">
-                    They'll sign in with this and set their own password on first login.
-                  </p>
-                </div>
-                <DialogFooter>
-                  <Button type="submit" disabled={inviteUser.isPending}>
-                    {inviteUser.isPending && <Loader2 className="animate-spin" />}
-                    Create account
-                  </Button>
-                </DialogFooter>
-              </form>
-            </>
-          )}
-        </DialogContent>
-      </Dialog>
+      <CreateAccountDialog open={inviteOpen} onOpenChange={setInviteOpen} companies={companies} />
     </div>
   );
 }
@@ -545,6 +403,112 @@ function SecurityTab() {
   );
 }
 
+function RequestsTab() {
+  const { data: requests, isLoading } = useAccessRequests();
+  const { data: companies } = useAllCompanies();
+  const reviewRequest = useReviewAccessRequest();
+  const [approving, setApproving] = useState<{ id: string; name: string; email: string } | null>(null);
+
+  async function handleDeny(id: string) {
+    if (!window.confirm("Deny this access request? They won't be notified, but they can submit another one.")) return;
+    try {
+      await reviewRequest.mutateAsync({ id, approved: false });
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Could not deny this request");
+    }
+  }
+
+  if (isLoading) {
+    return (
+      <div className="flex flex-col gap-2">
+        {Array.from({ length: 3 }).map((_, i) => (
+          <Skeleton key={i} className="h-16 w-full" />
+        ))}
+      </div>
+    );
+  }
+
+  const pending = requests?.filter((r) => r.status === "pending") ?? [];
+  const reviewed = requests?.filter((r) => r.status !== "pending") ?? [];
+
+  return (
+    <div className="flex flex-col gap-6">
+      <div>
+        <h3 className="mb-2 text-sm font-semibold">Pending requests</h3>
+        {pending.length === 0 ? (
+          <EmptyState icon={UserCheck} title="No pending requests" description="Submissions from /request-access show up here." />
+        ) : (
+          <div className="overflow-hidden rounded-lg border">
+            {pending.map((r) => (
+              <div
+                key={r.id}
+                className="flex flex-col gap-2.5 border-b px-4 py-3 last:border-b-0 sm:flex-row sm:items-start"
+              >
+                <div className="min-w-0 flex-1">
+                  <p className="truncate text-sm font-medium">{r.full_name ?? r.email}</p>
+                  <p className="truncate text-xs text-muted-foreground">{r.email}</p>
+                  {r.message && <p className="mt-1 text-sm text-muted-foreground">{r.message}</p>}
+                  <p className="mt-1 text-xs text-muted-foreground">
+                    Requested {formatDistanceToNow(new Date(r.created_at), { addSuffix: true })}
+                  </p>
+                </div>
+                <div className="flex shrink-0 items-center gap-1 self-end sm:self-auto">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setApproving({ id: r.id, name: r.full_name ?? "", email: r.email })}
+                  >
+                    <UserCheck className="size-3.5" /> Approve
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="text-destructive hover:text-destructive"
+                    disabled={reviewRequest.isPending}
+                    onClick={() => void handleDeny(r.id)}
+                  >
+                    <UserX className="size-3.5" /> Deny
+                  </Button>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {reviewed.length > 0 && (
+        <div>
+          <h3 className="mb-2 text-sm font-semibold">Reviewed</h3>
+          <div className="overflow-hidden rounded-lg border">
+            {reviewed.map((r) => (
+              <div key={r.id} className="flex flex-wrap items-center gap-x-3 gap-y-1 border-b px-4 py-2.5 text-sm last:border-b-0">
+                <span className="min-w-0 flex-1 truncate">{r.full_name ?? r.email}</span>
+                <Badge variant={r.status === "approved" ? "success" : "outline"}>
+                  {r.status === "approved" ? "Approved" : "Denied"}
+                </Badge>
+                <span className="shrink-0 text-xs text-muted-foreground">
+                  {r.reviewed_at ? formatDistanceToNow(new Date(r.reviewed_at), { addSuffix: true }) : ""}
+                </span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      <CreateAccountDialog
+        open={!!approving}
+        onOpenChange={(open) => !open && setApproving(null)}
+        companies={companies}
+        defaultName={approving?.name ?? ""}
+        defaultEmail={approving?.email ?? ""}
+        onAccountHandled={() => {
+          if (approving) reviewRequest.mutate({ id: approving.id, approved: true });
+        }}
+      />
+    </div>
+  );
+}
+
 function AccessTab() {
   const resources = Object.keys(PERMISSION_MATRIX) as (keyof typeof PERMISSION_MATRIX)[];
 
@@ -602,6 +566,8 @@ function AccessTab() {
 
 export function AdministrationPage() {
   const { profile } = useAuth();
+  const { data: requests } = useAccessRequests();
+  const pendingCount = requests?.filter((r) => r.status === "pending").length ?? 0;
 
   if (!profile?.is_platform_admin) {
     return (
@@ -622,17 +588,30 @@ export function AdministrationPage() {
         </p>
       </div>
       <Tabs defaultValue="people">
-        <TabsList>
-          <TabsTrigger value="people">People</TabsTrigger>
-          <TabsTrigger value="companies">Companies</TabsTrigger>
-          <TabsTrigger value="security">Security</TabsTrigger>
-          <TabsTrigger value="access">Access</TabsTrigger>
-        </TabsList>
+        <div className="overflow-x-auto">
+          <TabsList>
+            <TabsTrigger value="people">People</TabsTrigger>
+            <TabsTrigger value="companies">Companies</TabsTrigger>
+            <TabsTrigger value="requests">
+              Requests
+              {pendingCount > 0 && (
+                <Badge variant="destructive" className="ml-1 px-1.5">
+                  {pendingCount}
+                </Badge>
+              )}
+            </TabsTrigger>
+            <TabsTrigger value="security">Security</TabsTrigger>
+            <TabsTrigger value="access">Access</TabsTrigger>
+          </TabsList>
+        </div>
         <TabsContent value="people" className="mt-4">
           <PeopleTab />
         </TabsContent>
         <TabsContent value="companies" className="mt-4">
           <CompaniesTab />
+        </TabsContent>
+        <TabsContent value="requests" className="mt-4">
+          <RequestsTab />
         </TabsContent>
         <TabsContent value="security" className="mt-4">
           <SecurityTab />

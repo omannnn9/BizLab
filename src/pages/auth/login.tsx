@@ -109,7 +109,11 @@ export function LoginPage() {
           </form>
 
           <p className="mt-8 text-center text-xs text-muted-foreground lg:text-left">
-            Access to BizLab is granted by your administrator. There is no self-service sign-up.
+            Access to BizLab is granted by your administrator. There is no self-service sign-up —{" "}
+            <Link to="/request-access" className="font-medium text-primary hover:underline">
+              request access
+            </Link>{" "}
+            if you need an account.
           </p>
         </div>
       </div>

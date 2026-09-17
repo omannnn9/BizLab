@@ -14,6 +14,7 @@ import { WorkspaceLayout } from "@/components/layout/workspace-layout";
 import { HomePage } from "@/pages/home";
 import { LoginPage } from "@/pages/auth/login";
 import { ForgotPasswordPage } from "@/pages/auth/forgot-password";
+import { RequestAccessPage } from "@/pages/auth/request-access";
 import { ResetPasswordPage } from "@/pages/auth/reset-password";
 import { AcceptInvitePage } from "@/pages/auth/accept-invite";
 import { WorkspacePicker } from "@/pages/onboarding/workspace-picker";
@@ -76,6 +77,7 @@ export default function App() {
                   <Route path="/login" element={<LoginPage />} />
                   <Route path="/signup" element={<Navigate to="/login" replace />} />
                   <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+                  <Route path="/request-access" element={<RequestAccessPage />} />
                   <Route path="/reset-password" element={<ResetPasswordPage />} />
                   <Route path="/accept-invite" element={<AcceptInvitePage />} />
 

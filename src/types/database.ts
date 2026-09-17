@@ -20,6 +20,19 @@ export type FolderModule = "documents" | "files";
 export type FileAccessLevel = "view" | "edit";
 export type ItemVisibility = "company" | "restricted";
 
+export type AccessRequestStatus = "pending" | "approved" | "denied";
+
+export interface AccessRequest {
+  id: string;
+  email: string;
+  full_name: string | null;
+  message: string | null;
+  status: AccessRequestStatus;
+  reviewed_by: string | null;
+  reviewed_at: string | null;
+  created_at: string;
+}
+
 export type ChannelType = "public" | "private" | "direct" | "group";
 
 export type WidgetType =
